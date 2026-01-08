@@ -4,9 +4,15 @@ import argparse
 import logging
 import os
 from contextlib import asynccontextmanager
+import secrets
+import time
 from typing import AsyncIterator, Dict, Optional
 
+from starlette.responses import JSONResponse
+from starlette.requests import Request
 from mcp.server.fastmcp import FastMCP
+from mcp.server.auth.provider import AccessToken, TokenVerifier
+from mcp.server.auth.settings import AuthSettings
 
 from imap_mcp.config import ServerConfig, load_config
 from imap_mcp.imap_client import ImapClient
@@ -20,6 +26,25 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger("imap_mcp")
+
+
+class StaticTokenVerifier:
+    """Simple token verifier for static bearer token."""
+
+    def __init__(self, token: str):
+        self.token = token
+
+    async def verify_token(self, token: str) -> AccessToken | None:
+        """Verify the bearer token."""
+        if secrets.compare_digest(token, self.token):
+            return AccessToken(
+                token=token,
+                client_id="static-client",
+                scopes=[],
+                expires_at=int(time.time())
+                + 3600,  # Valid for 1 hour window (refreshed per request)
+            )
+        return None
 
 
 @asynccontextmanager
@@ -81,6 +106,32 @@ def create_server(
     # Load configuration
     config = load_config(config_path)
 
+    # Bearer Token Authentication
+    # We only enable auth if it's explicitly requested via env var or always generate if HTTP transport?
+    # The prompt implies we should always have it for HTTP.
+    # Let's check for an existing token in env, or generate one.
+    auth_token = os.environ.get("IMAP_MCP_TOKEN")
+    if not auth_token:
+        auth_token = secrets.token_urlsafe(32)
+        logger.warning(
+            f"No IMAP_MCP_TOKEN found in environment. Generated temporary token: {auth_token}"
+        )
+    else:
+        logger.info("Using configured IMAP_MCP_TOKEN from environment.")
+
+    # Create token verifier
+    token_verifier = StaticTokenVerifier(auth_token)
+
+    # Create AuthSettings - required if using token_verifier in FastMCP init
+    # Note: FastMCP checks: if token_verifier AND NOT auth_settings -> ValueError.
+    # We need dummy auth settings to satisfy the check, even if we use our own verifier.
+    # The issuer_url is required by pydantic model.
+    auth_settings = AuthSettings(
+        issuer_url="http://localhost/",  # type: ignore
+        resource_server_url="http://localhost/",  # type: ignore
+        required_scopes=[],
+    )
+
     # Create MCP server with all the necessary capabilities
     server = FastMCP(
         "IMAP",
@@ -90,6 +141,8 @@ def create_server(
         lifespan=server_lifespan,
         host=host,
         port=port,
+        auth=auth_settings,
+        token_verifier=token_verifier,
     )
 
     # Store config for access in the lifespan
@@ -124,6 +177,11 @@ def create_server(
 
     # Apply MCP protocol extension for Claude Desktop compatibility
     server = extend_server(server)
+
+    @server.custom_route("/health", methods=["GET"])
+    async def health_check(request: Request) -> JSONResponse:
+        """Health check endpoint."""
+        return JSONResponse({"status": "healthy", "service": "imap-mcp"})
 
     return server
 

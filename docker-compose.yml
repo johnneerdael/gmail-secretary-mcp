@@ -1,13 +1,18 @@
 services:
   imap-mcp:
-    build: .
+    image: ghcr.io/jneerdaekl/imap-mcp:latest
     container_name: imap-mcp
     restart: always
+    ports:
+      - "8080:8080"
+      - "8000:8000"
     volumes:
       # Mount the config directory
       - ./config.yaml:/app/config/config.yaml
+      - ./config:/app/config
       # Persist tasks if needed (optional if using external storage)
       - ./tasks.json:/app/tasks.json
+    command: uv run python -m imap_mcp.server --transport http --host 0.0.0.0 --port 8000
     environment:
       # Optional environment variables to override config
       - IMAP_HOST=${IMAP_HOST}

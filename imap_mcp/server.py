@@ -25,10 +25,10 @@ logger = logging.getLogger("imap_mcp")
 @asynccontextmanager
 async def server_lifespan(server: FastMCP) -> AsyncIterator[Dict]:
     """Server lifespan manager to handle IMAP client lifecycle.
-    
+
     Args:
         server: MCP server instance
-        
+
     Yields:
         Context dictionary containing IMAP client
     """
@@ -38,17 +38,17 @@ async def server_lifespan(server: FastMCP) -> AsyncIterator[Dict]:
     if not config:
         # This is a fallback in case we can't find the config
         config = load_config()
-    
+
     if not isinstance(config, ServerConfig):
         raise TypeError("Invalid server configuration")
-    
+
     imap_client = ImapClient(config.imap, config.allowed_folders)
-    
+
     try:
         # Connect to IMAP server
         logger.info("Connecting to IMAP server...")
         imap_client.connect()
-        
+
         # Yield the context with the IMAP client
         yield {"imap_client": imap_client}
     finally:
@@ -57,12 +57,19 @@ async def server_lifespan(server: FastMCP) -> AsyncIterator[Dict]:
         imap_client.disconnect()
 
 
-def create_server(config_path: Optional[str] = None, debug: bool = False) -> FastMCP:
+def create_server(
+    config_path: Optional[str] = None,
+    debug: bool = False,
+    host: str = "127.0.0.1",
+    port: int = 8000,
+) -> FastMCP:
     """Create and configure the MCP server.
 
     Args:
         config_path: Path to configuration file
         debug: Enable debug mode
+        host: Host to bind to (for SSE)
+        port: Port to bind to (for SSE)
 
     Returns:
         Configured MCP server instance
@@ -70,28 +77,31 @@ def create_server(config_path: Optional[str] = None, debug: bool = False) -> Fas
     # Set up logging level
     if debug:
         logger.setLevel(logging.DEBUG)
-        
+
     # Load configuration
     config = load_config(config_path)
-    
+
     # Create MCP server with all the necessary capabilities
     server = FastMCP(
         "IMAP",
-        description="IMAP Model Context Protocol server for email processing",
-        version="0.1.0",
+        instructions="IMAP Model Context Protocol server for email processing",
+        # description="IMAP Model Context Protocol server for email processing", # description not supported
+        # version="0.1.0", # version not supported in FastMCP init
         lifespan=server_lifespan,
+        host=host,
+        port=port,
     )
-    
+
     # Store config for access in the lifespan
     server._config = config
-    
+
     # Create IMAP client for setup (will be recreated in lifespan)
     imap_client = ImapClient(config.imap, config.allowed_folders)
-    
+
     # Register resources and tools
     register_resources(server, imap_client)
     register_tools(server, imap_client)
-    
+
     # Add server status tool
     @server.tool()
     def server_status() -> str:
@@ -104,37 +114,67 @@ def create_server(config_path: Optional[str] = None, debug: bool = False) -> Fas
             "imap_user": config.imap.username,
             "imap_ssl": config.imap.use_ssl,
         }
-        
+
         if config.allowed_folders:
             status["allowed_folders"] = list(config.allowed_folders)
         else:
             status["allowed_folders"] = "All folders allowed"
-        
+
         return "\n".join(f"{k}: {v}" for k, v in status.items())
-    
+
     # Apply MCP protocol extension for Claude Desktop compatibility
     server = extend_server(server)
-    
+
     return server
+
+
+def create_app() -> "Starlette":  # type: ignore
+    """Create the Starlette app for the server.
+
+    This factory function is intended to be used by uvicorn:
+    uvicorn --factory imap_mcp.server:create_app
+    """
+    config_path = os.environ.get("IMAP_MCP_CONFIG")
+    debug = os.environ.get("IMAP_MCP_DEBUG", "").lower() == "true"
+
+    server = create_server(config_path=config_path, debug=debug)
+    return server.streamable_http_app()
 
 
 def main() -> None:
     """Run the IMAP MCP server."""
     parser = argparse.ArgumentParser(description="IMAP MCP Server")
     parser.add_argument(
-        "--config", 
+        "--config",
         help="Path to configuration file",
         default=os.environ.get("IMAP_MCP_CONFIG"),
     )
     parser.add_argument(
-        "--dev", 
-        action="store_true", 
+        "--dev",
+        action="store_true",
         help="Enable development mode",
     )
     parser.add_argument(
-        "--debug", 
-        action="store_true", 
+        "--debug",
+        action="store_true",
         help="Enable debug logging",
+    )
+    parser.add_argument(
+        "--transport",
+        default="stdio",
+        choices=["stdio", "sse", "http"],
+        help="Transport protocol to use: stdio, sse, or http (streamable http)",
+    )
+    parser.add_argument(
+        "--host",
+        default="0.0.0.0",
+        help="Host to bind to for SSE/HTTP server",
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=8000,
+        help="Port to bind to for SSE/HTTP server",
     )
     parser.add_argument(
         "--version",
@@ -142,20 +182,70 @@ def main() -> None:
         help="Show version information and exit",
     )
     args = parser.parse_args()
-    
+
     if args.version:
         print("IMAP MCP Server version 0.1.0")
         return
-    
+
     if args.debug:
         logger.setLevel(logging.DEBUG)
-    
-    server = create_server(args.config, args.debug)
-    
-    # Start the server
-    logger.info("Starting server{}...".format(" in development mode" if args.dev else ""))
-    server.run()
-    
-    
+
+    # For stdio transport, we run directly
+    if args.transport == "stdio":
+        server = create_server(config_path=args.config, debug=args.debug)
+        logger.info("Starting server with stdio transport...")
+        server.run(transport="stdio")
+
+    # For HTTP/SSE transport, we use uvicorn
+    elif args.transport in ["sse", "http"]:
+        import uvicorn
+
+        # Legacy SSE warning
+        if args.transport == "sse":
+            logger.warning(
+                "SSE transport is deprecated. Consider using 'http' for Streamable HTTP."
+            )
+
+        logger.info(
+            "Starting server{} with uvicorn...".format(
+                " in development mode" if args.dev else ""
+            )
+        )
+
+        # If we are in dev mode (reload), we must use the import string
+        if args.dev:
+            # Set env var so the module-level create_server picks up the config
+            if args.config:
+                os.environ["IMAP_MCP_CONFIG"] = args.config
+
+            uvicorn.run(
+                "imap_mcp.server:create_app",
+                host=args.host,
+                port=args.port,
+                reload=True,
+                factory=True,
+            )
+        else:
+            # If not reloading, we can create a specific server instance with the config
+            server = create_server(
+                config_path=args.config,
+                debug=args.debug,
+                host=args.host,
+                port=args.port,
+            )
+
+            # Select app based on transport
+            if args.transport == "sse":
+                starlette_app = server.sse_app()
+            else:
+                starlette_app = server.streamable_http_app()
+
+            uvicorn.run(
+                starlette_app,
+                host=args.host,
+                port=args.port,
+            )
+
+
 if __name__ == "__main__":
     main()

@@ -37,10 +37,21 @@ docker-compose logs -f
 - **Tasks**: The `./tasks.json` file is mounted to persist tasks created by the agent.
 
 ## Connection
-The server runs inside the container. If you need to access it from other tools, ensure they can reach the Docker network or that you expose the necessary ports (though MCP typically communicates via stdio, for Docker deployments via MCP, you might need an SSE transport which this server supports via FastMCP).
+
+The server runs inside the container and exposes a Streamable HTTP endpoint for MCP clients.
+
+*   **HTTP/SSE URL**: `http://localhost:8000/mcp` (Streamable HTTP) or `http://localhost:8000/sse` (Legacy)
+
+Ensure port `8000` is mapped in your `docker-compose.yml` (default).
 
 **Note for Claude Desktop / Clients**:
-Standard MCP servers communicate via Stdio. To use a Dockerized MCP server with a local client (like Claude Desktop), the client needs to invoke the `docker run` command directly.
+Standard MCP servers communicate via Stdio, but modern clients also support remote connections via HTTP/SSE.
+
+### Option 1: Remote Connection (Recommended)
+Configure your client to connect to `http://localhost:8000/mcp`. This requires the container to be running (`docker-compose up`).
+
+### Option 2: Docker Exec (Stdio)
+To use a Dockerized MCP server with a local client (like Claude Desktop) via Stdio, the client needs to invoke the `docker run` command directly.
 
 Example Claude Desktop config:
 ```json

@@ -1,0 +1,37 @@
+# Git
+.git
+.gitignore
+
+# Python / UV
+.venv
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.coverage.*
+.cache
+htmlcov/
+dist/
+build/
+*.egg-info/
+.eggs/
+
+# Project specific
+tests/
+docs/
+examples/
+scripts/
+*.md
+config.yaml
+config.yaml.bak
+tasks.json
+coverage.json
+output.yaml
+*.log

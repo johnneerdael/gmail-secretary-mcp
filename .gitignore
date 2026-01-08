@@ -1,0 +1,75 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Coverage
+.coverage
+.coverage.*
+coverage_data/
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+.pytest_cache/
+
+# Virtual environment
+venv/
+env/
+ENV/
+.env*
+.venv
+uv.lock
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Mac OS
+.DS_Store
+
+# OAuth2
+client_secret_*.json
+token_*.json
+credentials.json
+*.credentials.json
+
+# Configuration
+config.yaml*
+
+# Resources 
+# Exclude all files in resources by default
+resources/
+reference_github/
+mcp-cli/
+
+
+
+# Exclude any sensitive files that might be in resources even if they match above patterns
+#*secret*
+#*key*
+#*credential*
+#*password*
+
+# Secret Design Ideas
+# reference/

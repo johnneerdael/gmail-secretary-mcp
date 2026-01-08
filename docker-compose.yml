@@ -1,0 +1,21 @@
+services:
+  imap-mcp:
+    build: .
+    container_name: imap-mcp
+    restart: always
+    volumes:
+      # Mount the config directory
+      - ./config.yaml:/app/config/config.yaml
+      # Persist tasks if needed (optional if using external storage)
+      - ./tasks.json:/app/tasks.json
+    environment:
+      # Optional environment variables to override config
+      - IMAP_HOST=${IMAP_HOST}
+      - IMAP_USER=${IMAP_USER}
+      - IMAP_PASSWORD=${IMAP_PASSWORD}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    # Keep the container running if it's a long-running server
+    stdin_open: true
+    tty: true

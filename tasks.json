@@ -1,0 +1,10 @@
+[
+  {
+    "id": 1767835931,
+    "description": "Manual test task",
+    "created_at": "2026-01-08T02:32:11.937756",
+    "status": "pending",
+    "due_date": null,
+    "priority": 1
+  }
+]

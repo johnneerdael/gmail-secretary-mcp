@@ -42,6 +42,7 @@ docker run -i --rm \
 This method connects to the server running inside Docker via Streamable HTTP (replaces legacy SSE).
 
 *   **Prerequisite**: You must have the service running (`docker-compose up -d`) and port 8000 exposed.
+*   **Authentication**: Requires a Bearer Token (see "Finding the Token" below).
 *   **Why use this?**
     *   **Simplicity**: No complex Docker commands in your client config.
     *   **Compatibility**: Works well with clients that support remote MCP servers.
@@ -49,6 +50,17 @@ This method connects to the server running inside Docker via Streamable HTTP (re
     *   **Performance**: Better performance and standard web infrastructure integration.
 
 **URL:** `http://localhost:8000/mcp`
+
+### Finding the Token
+
+The server generates a secure token on startup if one isn't provided. You can find it in the logs:
+
+```bash
+docker-compose logs | grep "token"
+# Output: No IMAP_MCP_TOKEN found in environment. Generated temporary token: <YOUR_TOKEN>
+```
+
+To set a fixed token, add `IMAP_MCP_TOKEN=your-secret-token` to your `docker-compose.yml` environment variables.
 
 ---
 
@@ -64,13 +76,16 @@ For **OpenCode** or compatible tools, check their specific config documentation 
 
 ### Configuration (Method 3 - Streamable HTTP)
 
-Add this to your `mcpServers` block:
+Add this to your `mcpServers` block. Note that you must include the `headers` field with your authentication token.
 
 ```json
 {
   "mcpServers": {
     "imap-mcp": {
-      "url": "http://localhost:8000/mcp"
+      "url": "http://localhost:8000/mcp",
+      "headers": {
+        "Authorization": "Bearer <YOUR_TOKEN>"
+      }
     }
   }
 }
@@ -164,6 +179,7 @@ These VS Code extensions act as autonomous coding agents. They can read from the
 
 If your version supports adding a URL-based server in the UI, use:
 *   **URL**: `http://localhost:8000/mcp`
+*   **Headers**: Add a header `Authorization` with value `Bearer <YOUR_TOKEN>` (if supported by UI).
 
 Otherwise, use the "Edit MCP Settings" button to open the configuration file and add:
 
@@ -171,7 +187,10 @@ Otherwise, use the "Edit MCP Settings" button to open the configuration file and
 {
   "mcpServers": {
     "imap-mcp": {
-      "url": "http://localhost:8000/mcp"
+      "url": "http://localhost:8000/mcp",
+      "headers": {
+        "Authorization": "Bearer <YOUR_TOKEN>"
+      }
     }
   }
 }
@@ -201,6 +220,9 @@ If modifying a JSON configuration file:
 
 ```json
 "imap-mcp": {
-  "url": "http://localhost:8000/mcp"
+  "url": "http://localhost:8000/mcp",
+  "headers": {
+    "Authorization": "Bearer <YOUR_TOKEN>"
+  }
 }
 ```

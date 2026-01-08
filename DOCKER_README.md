@@ -10,6 +10,7 @@ This project includes a Docker configuration to run the IMAP MCP server as a per
    - If you don't have one, copy the sample: `cp config.sample.yaml config.yaml` and edit it.
 
 2. **Environment Variables** (Optional): You can override configuration using environment variables in a `.env` file or directly in `docker-compose.yml`.
+   - `IMAP_MCP_TOKEN`: Set a fixed authentication token for HTTP connections. If not set, one will be generated on startup.
 
 ## Running the Service
 
@@ -35,6 +36,24 @@ docker-compose logs -f
 ## Persistence
 - **Config**: The `./config.yaml` file is mounted into the container. Changes on your host machine will be reflected in the container (restart required for config reload).
 - **Tasks**: The `./tasks.json` file is mounted to persist tasks created by the agent.
+
+## Authentication & Security
+
+When connecting via HTTP (port 8000), authentication is **mandatory**.
+
+*   **Auto-generated Token**: If you don't provide a token, the server generates a secure one on startup. View it with:
+    ```bash
+    docker-compose logs | grep "token"
+    ```
+*   **Fixed Token**: To set a stable token (recommended for permanent config), set the `IMAP_MCP_TOKEN` environment variable in your `docker-compose.yml`:
+    ```yaml
+    environment:
+      - IMAP_MCP_TOKEN=my-secret-token-123
+    ```
+
+## Monitoring
+
+*   **Health Check**: A health check endpoint is available at `http://localhost:8000/health`. It returns `{"status": "healthy", "service": "imap-mcp"}` if the server is running. This does not require authentication.
 
 ## Connection
 

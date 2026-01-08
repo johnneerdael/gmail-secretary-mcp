@@ -16,19 +16,14 @@ This project implements an MCP server that interfaces with IMAP email servers to
 The IMAP MCP server is designed to work with Claude or any other MCP-compatible assistant, allowing them to act as intelligent email assistants that learn your preferences over time.
 
 ## Features
-
-- **Email Authentication**: Secure access to IMAP servers with various authentication methods
-- **Email Browsing**: List folders and messages with filtering options 
-- **Email Content**: Read message contents including text, HTML, and attachments 
-- **Email Actions**: Move, delete, mark as read/unread, flag messages 
-- **Email Composition**: Draft and save replies to messages with proper formatting
-  - Support for plain text and HTML replies
-  - Reply-all functionality with CC support
-  - Proper threading with In-Reply-To and References headers
-  - Save drafts to appropriate folders
-- **Search**: Basic search capabilities across folders 
-- **Interaction Patterns**: Structured patterns for processing emails and learning preferences (planned)
-- **Learning Layer**: Record and analyze user decisions to predict future actions (planned)
+- **Read Emails**: Search and read emails from specific folders (default: INBOX)
+- **Send Emails**: Send new emails with optional attachments
+- **Organize**: Move, copy, and delete emails; manage folders
+- **Triage**: AI-ready tools for analyzing email importance and content
+- **Security**:
+  - OAuth2 support for Gmail/Outlook
+  - Bearer Token authentication for HTTP MCP connections
+- **Deployment**: Docker support with health checks and persistent configuration
 
 ## Current Project Structure
 

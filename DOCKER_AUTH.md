@@ -1,4 +1,6 @@
-# OAuth2 Authentication with Docker
+# OAuth2 Authentication with Docker (IMAP Service)
+
+*Note: This guide explains how to authenticate the IMAP Service with your Email Provider (e.g., Gmail). This is different from the Bearer Token authentication used to connect your MCP Client to the Docker container.*
 
 When running the IMAP MCP server in Docker, the OAuth2 authentication flow requires a slightly different approach because the redirect callback happens on `localhost` (which, inside the container, is different from your host machine's `localhost`).
 

@@ -1,4 +1,4 @@
-# Google Workspace Secretary MCP
+# Gmail Secretary MCP
 
 [![Version](https://img.shields.io/badge/version-3.0.0-blue.svg)](https://github.com/johnneerdael/Google-Workspace-Secretary-MCP/releases)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -7,26 +7,42 @@ An AI-native Model Context Protocol (MCP) server that transforms your Gmail and 
 
 [📚 **Full Documentation**](https://johnneerdael.github.io/Google-Workspace-Secretary-MCP/) · [🚀 **Quick Start**](#-quick-start) · [🔒 **Security**](#-security-best-practices)
 
----
+## What's NEW in v4.0.0
 
-## What's New in v3.0.0
+### Complete Architecture Rewrite
 
-**Dual-Process Architecture** — Complete separation of concerns for reliability and flexibility:
+This release fundamentally changes how the system works internally. The Engine now owns **all database writes**, while the MCP server is **read-only** against the database.
 
-- 🔄 **Engine + MCP Split**: Independent sync daemon (`secretary-engine`) + MCP server (`secretary-mcp`)
-- 📅 **Calendar Sync**: Full calendar synchronization with local SQLite cache
-- 🔌 **Unix Socket IPC**: Engine exposes internal API for mutations via Unix socket
-- 🧠 **Optional Semantic Search**: PostgreSQL + pgvector backend with embeddings (when OpenAI-compatible endpoint configured)
-- ⚡ **Configurable Database**: SQLite (default) or PostgreSQL with pgvector for AI features
+### Changed
 
-### Database Options
+- **Engine owns all database writes**: Engine now uses `DatabaseInterface` (not legacy `EmailCache`) for all persistence
+- **MCP is read-only**: MCP server reads directly from database, calls Engine API only for mutations
+- **Unified database access**: Both Engine and MCP use the same `DatabaseInterface` abstraction
+- **Database backend selection**: `config.database.backend` determines SQLite or PostgreSQL for both processes
 
-| Backend | When to Use | Features |
-|---------|-------------|----------|
-| **SQLite** (default) | Simple deployment, single user | FTS5 keyword search, WAL mode |
-| **PostgreSQL + pgvector** | AI features needed | Semantic search, embeddings, similarity matching |
+### Added
 
-See the [Architecture Documentation](https://johnneerdael.github.io/Google-Workspace-Secretary-MCP/architecture.html) for details.
+- **New Engine API endpoints**:
+  - `GET /api/calendar/events` - List calendar events in time range
+  - `GET /api/calendar/availability` - Get free/busy information
+  - `POST /api/email/setup-labels` - Create Secretary label hierarchy in Gmail
+  - `POST /api/email/send` - Send email via Gmail API
+  - `POST /api/email/draft-reply` - Create draft reply to an email
+- **Calendar sync in Engine**: `sync_loop()` now syncs both email and calendar
+- **Automatic embedding generation**: Engine generates embeddings after email sync (PostgreSQL + pgvector)
+- **Graceful enrollment**: Engine starts in "no account" mode and auto-connects when OAuth tokens appear
+
+### Architecture
+
+```
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│   MCP Server    │────▶│  SQLite/PG DB   │◀────│     Engine      │
+│  (read-only)    │     │  (unified)      │     │  (all writes)   │
+└─────────────────┘     └─────────────────┘     └─────────────────┘
+        │                                               │
+        └──────────────▶ Engine FastAPI ◀───────────────┘
+                        (mutations only)
+```
 
 ---
 

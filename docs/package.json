@@ -4,8 +4,8 @@
   "description": "Documentation for Google Workspace Secretary MCP",
   "type": "module",
   "scripts": {
-    "build": "vitepress build docs",
-    "preview": "vitepress preview docs"
+    "build": "vitepress build",
+    "preview": "vitepress preview"
   },
   "devDependencies": {
     "vitepress": "^1.0.0",

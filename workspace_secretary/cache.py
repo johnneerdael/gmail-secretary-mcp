@@ -59,7 +59,7 @@ class EmailCache:
                     modseq INTEGER,
                     synced_at TEXT,
                     in_reply_to TEXT,
-                    references TEXT,
+                    references_header TEXT,
                     thread_root_uid INTEGER,
                     thread_parent_uid INTEGER,
                     thread_depth INTEGER DEFAULT 0,
@@ -104,7 +104,7 @@ class EmailCache:
 
         migrations = [
             ("in_reply_to", "TEXT"),
-            ("references", "TEXT"),
+            ("references_header", "TEXT"),
             ("thread_root_uid", "INTEGER"),
             ("thread_parent_uid", "INTEGER"),
             ("thread_depth", "INTEGER DEFAULT 0"),
@@ -374,7 +374,7 @@ class EmailCache:
                             header_str = str(header_bytes)
 
                         in_reply_to = ""
-                        references = ""
+                        references_header = ""
                         message_id = ""
 
                         for line in header_str.split("\n"):
@@ -383,18 +383,19 @@ class EmailCache:
                             if lower_line.startswith("in-reply-to:"):
                                 in_reply_to = line[12:].strip()
                             elif lower_line.startswith("references:"):
-                                references = line[11:].strip()
+                                references_header = line[11:].strip()
                             elif lower_line.startswith("message-id:"):
                                 message_id = line[11:].strip()
 
                         conn.execute(
                             """
-                            UPDATE emails SET in_reply_to = ?, references = ?,
+                            UPDATE emails SET in_reply_to = ?, references_header = ?,
                                 message_id = COALESCE(NULLIF(message_id, ''), ?)
                             WHERE uid = ? AND folder = ?
                             """,
-                            (in_reply_to, references, message_id, uid, folder),
+                            (in_reply_to, references_header, message_id, uid, folder),
                         )
+
                         updated += 1
 
                     conn.commit()

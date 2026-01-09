@@ -2683,3 +2683,245 @@ def register_tools(
         except Exception as e:
             logger.error(f"Error in triage_remaining_emails: {e}")
             return json.dumps({"error": str(e)}, indent=2)
+
+    @mcp.tool()
+    async def semantic_search_emails(
+        ctx: Context,
+        query: str,
+        folder: str = "INBOX",
+        limit: int = 20,
+        similarity_threshold: float = 0.7,
+    ) -> str:
+        """Search emails by semantic meaning using AI embeddings.
+
+        Finds emails conceptually similar to your query without exact keywords.
+        Requires PostgreSQL with pgvector and embeddings endpoint configured.
+
+        Args:
+            query: Natural language query (e.g., "emails about project deadlines")
+            folder: Email folder to search (default: INBOX)
+            limit: Maximum results (default: 20)
+            similarity_threshold: Minimum similarity 0-1 (default: 0.7)
+        """
+        try:
+            from workspace_secretary.engine.database import DatabaseInterface
+            from workspace_secretary.engine.embeddings import EmbeddingsClient
+
+            database: DatabaseInterface | None = None
+            embeddings_client: EmbeddingsClient | None = None
+
+            try:
+                database = ctx.request_context.lifespan_context.get("database")
+                embeddings_client = ctx.request_context.lifespan_context.get(
+                    "embeddings_client"
+                )
+            except (AttributeError, KeyError):
+                pass
+
+            if not database or not database.supports_embeddings():
+                return json.dumps(
+                    {
+                        "error": "Semantic search not available",
+                        "reason": "PostgreSQL with pgvector required. Configure database.backend: postgres and embeddings in config.yaml",
+                    },
+                    indent=2,
+                )
+
+            if not embeddings_client:
+                return json.dumps(
+                    {
+                        "error": "Embeddings not configured",
+                        "reason": "Configure embeddings.endpoint and embeddings.model in config.yaml",
+                    },
+                    indent=2,
+                )
+
+            query_result = await embeddings_client.embed_text(query)
+            query_embedding = query_result.embedding
+
+            results = database.semantic_search(
+                query_embedding=query_embedding,
+                limit=limit,
+                folder=folder,
+                similarity_threshold=similarity_threshold,
+            )
+
+            emails = []
+            for row in results:
+                emails.append(
+                    {
+                        "uid": row.get("uid"),
+                        "folder": row.get("folder"),
+                        "from": row.get("from_addr"),
+                        "to": row.get("to_addr"),
+                        "subject": row.get("subject"),
+                        "date": row.get("date"),
+                        "similarity": round(row.get("similarity", 0), 3),
+                        "snippet": (row.get("body_text") or "")[:300],
+                    }
+                )
+
+            return json.dumps(
+                {
+                    "query": query,
+                    "folder": folder,
+                    "results_count": len(emails),
+                    "similarity_threshold": similarity_threshold,
+                    "emails": emails,
+                },
+                indent=2,
+            )
+
+        except Exception as e:
+            logger.error(f"Error in semantic_search_emails: {e}")
+            return json.dumps({"error": str(e)}, indent=2)
+
+    @mcp.tool()
+    async def find_related_emails(
+        ctx: Context,
+        folder: str,
+        uid: int,
+        limit: int = 10,
+    ) -> str:
+        """Find emails contextually similar to a specific email using AI embeddings.
+
+        Useful for finding previous discussions, gathering context before replying,
+        or discovering related conversations. Requires PostgreSQL with pgvector.
+
+        Args:
+            folder: Folder containing the reference email
+            uid: UID of the email to find similar emails for
+            limit: Maximum similar emails to return (default: 10)
+        """
+        try:
+            from workspace_secretary.engine.database import DatabaseInterface
+
+            database: DatabaseInterface | None = None
+
+            try:
+                database = ctx.request_context.lifespan_context.get("database")
+            except (AttributeError, KeyError):
+                pass
+
+            if not database or not database.supports_embeddings():
+                return json.dumps(
+                    {
+                        "error": "Semantic search not available",
+                        "reason": "PostgreSQL with pgvector required. Configure database.backend: postgres and embeddings in config.yaml",
+                    },
+                    indent=2,
+                )
+
+            reference_email = database.get_email_by_uid(uid, folder)
+            if not reference_email:
+                return json.dumps(
+                    {"error": f"Email not found: UID {uid} in {folder}"},
+                    indent=2,
+                )
+
+            embedding = database.get_embedding(uid, folder)
+            if not embedding:
+                return json.dumps(
+                    {
+                        "error": "Reference email has no embedding",
+                        "reason": "Email may not have been processed yet. Embeddings are generated in background after sync.",
+                        "suggestion": "Try again later or run embedding sync manually.",
+                    },
+                    indent=2,
+                )
+
+            results = database.find_similar_emails(
+                email_uid=uid,
+                email_folder=folder,
+                limit=limit,
+            )
+
+            similar_emails = []
+            for row in results:
+                similar_emails.append(
+                    {
+                        "uid": row.get("uid"),
+                        "folder": row.get("folder"),
+                        "from": row.get("from_addr"),
+                        "to": row.get("to_addr"),
+                        "subject": row.get("subject"),
+                        "date": row.get("date"),
+                        "similarity": round(row.get("similarity", 0), 3),
+                        "snippet": (row.get("body_text") or "")[:300],
+                    }
+                )
+
+            return json.dumps(
+                {
+                    "reference_email": {
+                        "uid": reference_email.get("uid"),
+                        "folder": reference_email.get("folder"),
+                        "from": reference_email.get("from_addr"),
+                        "subject": reference_email.get("subject"),
+                        "date": reference_email.get("date"),
+                    },
+                    "similar_emails_count": len(similar_emails),
+                    "similar_emails": similar_emails,
+                },
+                indent=2,
+            )
+
+        except Exception as e:
+            logger.error(f"Error in find_related_emails: {e}")
+            return json.dumps({"error": str(e)}, indent=2)
+
+    @mcp.tool()
+    async def get_embedding_status(ctx: Context) -> str:
+        """Check status of the embeddings system for troubleshooting."""
+        try:
+            from workspace_secretary.engine.database import DatabaseInterface
+            from workspace_secretary.engine.embeddings import EmbeddingsClient
+
+            status: dict[str, Any] = {
+                "semantic_search_available": False,
+                "database_backend": "unknown",
+                "embeddings_configured": False,
+            }
+
+            database: DatabaseInterface | None = None
+            embeddings_client: EmbeddingsClient | None = None
+            config = None
+
+            try:
+                database = ctx.request_context.lifespan_context.get("database")
+                embeddings_client = ctx.request_context.lifespan_context.get(
+                    "embeddings_client"
+                )
+                config = ctx.request_context.lifespan_context.get("config")
+            except (AttributeError, KeyError):
+                pass
+
+            if config:
+                status["database_backend"] = config.database.backend.value
+                status["embeddings_configured"] = config.database.embeddings.enabled
+                if config.database.embeddings.enabled:
+                    status["embeddings_model"] = config.database.embeddings.model
+                    status["embeddings_endpoint"] = config.database.embeddings.endpoint
+
+            if database:
+                status["database_supports_embeddings"] = database.supports_embeddings()
+
+                if database.supports_embeddings():
+                    status["semantic_search_available"] = embeddings_client is not None
+
+                    try:
+                        emails_needing = database.get_emails_needing_embedding(
+                            "INBOX", limit=1000
+                        )
+                        status["inbox_emails_without_embeddings"] = len(emails_needing)
+                    except Exception:
+                        pass
+            else:
+                status["database_supports_embeddings"] = False
+                status["note"] = "Database not initialized in context"
+
+            return json.dumps(status, indent=2)
+
+        except Exception as e:
+            logger.error(f"Error in get_embedding_status: {e}")
+            return json.dumps({"error": str(e)}, indent=2)

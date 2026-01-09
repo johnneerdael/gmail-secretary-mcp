@@ -289,6 +289,145 @@ class BearerAuthConfig:
         )
 
 
+class DatabaseBackend(Enum):
+    """Database backend type."""
+
+    SQLITE = "sqlite"
+    POSTGRES = "postgres"
+
+    @classmethod
+    def from_string(cls, value: str) -> "DatabaseBackend":
+        normalized = value.lower().strip()
+        if normalized == "sqlite":
+            return cls.SQLITE
+        elif normalized in ("postgres", "postgresql"):
+            return cls.POSTGRES
+        else:
+            raise ValueError(
+                f"Invalid database backend '{value}'. Must be 'sqlite' or 'postgres'."
+            )
+
+
+@dataclass
+class SqliteConfig:
+    """SQLite database configuration."""
+
+    email_cache_path: str = "config/email_cache.db"
+    calendar_cache_path: str = "config/calendar_cache.db"
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "SqliteConfig":
+        return cls(
+            email_cache_path=data.get("email_cache_path", "config/email_cache.db"),
+            calendar_cache_path=data.get(
+                "calendar_cache_path", "config/calendar_cache.db"
+            ),
+        )
+
+
+@dataclass
+class PostgresConfig:
+    """PostgreSQL database configuration."""
+
+    host: str = "localhost"
+    port: int = 5432
+    database: str = "secretary"
+    user: str = "secretary"
+    password: str = ""
+    ssl_mode: str = "prefer"
+
+    @property
+    def connection_string(self) -> str:
+        """Generate PostgreSQL connection string."""
+        return f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}?sslmode={self.ssl_mode}"
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "PostgresConfig":
+        return cls(
+            host=data.get("host") or os.environ.get("POSTGRES_HOST", "localhost"),
+            port=int(data.get("port") or os.environ.get("POSTGRES_PORT", "5432")),
+            database=data.get("database")
+            or os.environ.get("POSTGRES_DATABASE", "secretary"),
+            user=data.get("user") or os.environ.get("POSTGRES_USER", "secretary"),
+            password=data.get("password") or os.environ.get("POSTGRES_PASSWORD", ""),
+            ssl_mode=data.get("ssl_mode", "prefer"),
+        )
+
+
+@dataclass
+class EmbeddingsConfig:
+    """Embeddings configuration for semantic search."""
+
+    enabled: bool = False
+    endpoint: str = "https://api.openai.com/v1/embeddings"
+    model: str = "text-embedding-3-small"
+    api_key: str = ""
+    dimensions: int = 1536
+    batch_size: int = 100
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "EmbeddingsConfig":
+        api_key = (
+            data.get("api_key")
+            or os.environ.get("EMBEDDINGS_API_KEY")
+            or os.environ.get("OPENAI_API_KEY", "")
+        )
+        return cls(
+            enabled=data.get("enabled", False),
+            endpoint=data.get("endpoint", "https://api.openai.com/v1/embeddings"),
+            model=data.get("model", "text-embedding-3-small"),
+            api_key=api_key,
+            dimensions=data.get("dimensions", 1536),
+            batch_size=data.get("batch_size", 100),
+        )
+
+
+@dataclass
+class DatabaseConfig:
+    """Database configuration."""
+
+    backend: DatabaseBackend = DatabaseBackend.SQLITE
+    sqlite: SqliteConfig = field(default_factory=SqliteConfig)
+    postgres: Optional[PostgresConfig] = None
+    embeddings: EmbeddingsConfig = field(default_factory=EmbeddingsConfig)
+
+    def __post_init__(self):
+        """Validate database configuration."""
+        if self.backend == DatabaseBackend.POSTGRES:
+            if not self.postgres:
+                raise ValueError(
+                    "PostgreSQL configuration required when backend is 'postgres'"
+                )
+            if not self.embeddings.enabled:
+                logger.warning(
+                    "PostgreSQL backend without embeddings - consider using SQLite for simpler deployment"
+                )
+            if self.embeddings.enabled and not self.embeddings.api_key:
+                raise ValueError(
+                    "Embeddings API key required when embeddings are enabled"
+                )
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "DatabaseConfig":
+        backend_str = data.get("backend", "sqlite")
+        backend = DatabaseBackend.from_string(backend_str)
+
+        sqlite_config = SqliteConfig.from_dict(data.get("sqlite", {}))
+        postgres_config = (
+            PostgresConfig.from_dict(data.get("postgres", {}))
+            if data.get("postgres")
+            else None
+        )
+        embeddings_config = EmbeddingsConfig.from_dict(data.get("embeddings", {}))
+
+        return cls(
+            backend=backend,
+            sqlite=sqlite_config,
+            postgres=postgres_config,
+            embeddings=embeddings_config,
+        )
+
+
 @dataclass
 class ServerConfig:
     """MCP server configuration."""
@@ -302,6 +441,7 @@ class ServerConfig:
     calendar: Optional[CalendarConfig] = None
     vip_senders: List[str] = field(default_factory=list)
     bearer_auth: BearerAuthConfig = field(default_factory=BearerAuthConfig)
+    database: DatabaseConfig = field(default_factory=DatabaseConfig)
 
     def __post_init__(self):
         """Validate server configuration."""
@@ -356,6 +496,7 @@ class ServerConfig:
             calendar=CalendarConfig.from_dict(data.get("calendar", {})),
             vip_senders=data.get("vip_senders", []),
             bearer_auth=BearerAuthConfig.from_dict(data.get("bearer_auth", {})),
+            database=DatabaseConfig.from_dict(data.get("database", {})),
         )
 
 

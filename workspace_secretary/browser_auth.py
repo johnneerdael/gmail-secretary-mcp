@@ -153,6 +153,7 @@ def run_local_server(
     oauth_mode: OAuthMode,
     port: int = DEFAULT_CALLBACK_PORT,
     host: str = DEFAULT_CALLBACK_HOST,
+    manual_mode: bool = False,
 ) -> Tuple[Optional[str], Optional[str], Optional[int]]:
     """Run a local server to handle the OAuth2 callback.
 
@@ -161,24 +162,14 @@ def run_local_server(
         client_secret: OAuth2 client secret
         port: Port for the local server
         host: Host for the local server
+        manual_mode: If True, prompt user to paste redirect URL instead of running server
 
     Returns:
         Tuple of (access_token, refresh_token, expiry) or (None, None, None) if failed
     """
-    app = create_oauth_app()
-
-    # Set up the redirect URI
     redirect_uri = f"http://{host}:{port}{CALLBACK_PATH}"
 
-    # Store the client credentials in the app config
-    app.config.update(
-        client_id=client_id,
-        client_secret=client_secret,
-        redirect_uri=redirect_uri,
-    )
-
-    # Set up the authorization URL
-    state = secrets.token_urlsafe(16)  # Generate a random state parameter
+    state = secrets.token_urlsafe(16)
     auth_params = {
         "client_id": client_id,
         "redirect_uri": redirect_uri,
@@ -190,7 +181,95 @@ def run_local_server(
     }
     auth_url = f"{GMAIL_AUTH_URL}?{urlencode(auth_params)}"
 
-    # Clear any previous tokens
+    if manual_mode:
+        return _run_manual_flow(client_id, client_secret, redirect_uri, auth_url)
+    else:
+        return _run_server_flow(
+            client_id, client_secret, redirect_uri, auth_url, port, host
+        )
+
+
+def _run_manual_flow(
+    client_id: str,
+    client_secret: str,
+    redirect_uri: str,
+    auth_url: str,
+) -> Tuple[Optional[str], Optional[str], Optional[int]]:
+    """Manual OAuth flow where user pastes the redirect URL."""
+    import requests
+
+    print("\n" + "=" * 60)
+    print("MANUAL AUTHENTICATION MODE")
+    print("=" * 60)
+    print("\n1. Open this URL in your browser:\n")
+    print(auth_url)
+    print("\n2. Complete the authentication in your browser.")
+    print("\n3. You will be redirected to a URL that may not load.")
+    print("   Copy the ENTIRE URL from your browser's address bar.")
+    print(
+        "   It will look like: http://localhost:8080/oauth2callback?code=...&state=..."
+    )
+    print("\n" + "-" * 60)
+
+    redirect_response = input("\nPaste the full redirect URL here: ").strip()
+
+    if not redirect_response:
+        print("Error: No URL provided.")
+        return None, None, None
+
+    try:
+        parsed = urlparse(redirect_response)
+        query_params = parse_qs(parsed.query)
+
+        code = query_params.get("code", [None])[0]
+        if not code:
+            print("Error: No authorization code found in URL.")
+            print("Make sure you copied the entire URL including the ?code=... part.")
+            return None, None, None
+
+        token_data = {
+            "code": code,
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "redirect_uri": redirect_uri,
+            "grant_type": "authorization_code",
+        }
+
+        response = requests.post(GMAIL_TOKEN_URL, data=token_data)
+        response.raise_for_status()
+
+        tokens = response.json()
+
+        access_token = tokens.get("access_token")
+        refresh_token = tokens.get("refresh_token")
+        token_expiry = int(time.time()) + tokens.get("expires_in", 3600)
+
+        print("\n✓ Authentication successful!")
+        return access_token, refresh_token, token_expiry
+
+    except Exception as e:
+        logger.error(f"Error in manual OAuth flow: {e}")
+        print(f"\nError: {e}")
+        return None, None, None
+
+
+def _run_server_flow(
+    client_id: str,
+    client_secret: str,
+    redirect_uri: str,
+    auth_url: str,
+    port: int,
+    host: str,
+) -> Tuple[Optional[str], Optional[str], Optional[int]]:
+    """Server-based OAuth flow with local callback server."""
+    app = create_oauth_app()
+
+    app.config.update(
+        client_id=client_id,
+        client_secret=client_secret,
+        redirect_uri=redirect_uri,
+    )
+
     auth_tokens["access_token"] = None
     auth_tokens["refresh_token"] = None
     auth_tokens["token_expiry"] = None
@@ -199,51 +278,45 @@ def run_local_server(
     webbrowser.open(auth_url)
 
     print(f"\nWaiting for authentication at http://{host}:{port}{CALLBACK_PATH}")
+    print(
+        "\nIf the browser doesn't open or callback fails, restart with --manual flag."
+    )
 
-    # Run the Flask app for a short period
-    # We need to run it in a separate thread to avoid blocking
     import threading
 
-    # Flag to signal when the server should stop
     server_should_stop = threading.Event()
 
     def run_server():
-        """Run the Flask server until stopped."""
-        # Create a custom server that can be stopped
         from werkzeug.serving import make_server
 
         server = make_server(host, port, app, threaded=True)
-        server.timeout = 0.5  # Check for stop flag every 0.5 seconds
+        server.timeout = 0.5
 
         while not server_should_stop.is_set():
             server.handle_request()
 
-    # Start the server thread
     server_thread = threading.Thread(target=run_server)
     server_thread.daemon = True
     server_thread.start()
 
-    # Wait for authentication to complete (or timeout)
     try:
-        # Wait for up to 5 minutes
-        max_wait_time = 5 * 60  # 5 minutes in seconds
+        max_wait_time = 5 * 60
         start_time = time.time()
 
         while time.time() - start_time < max_wait_time:
             if auth_tokens["access_token"] is not None:
-                # Authentication completed successfully
                 break
 
-            # Check every 1 second
             time.sleep(1)
 
-        # Check if we timed out
         if auth_tokens["access_token"] is None:
             print("\nAuthentication timed out. Please try again.")
+            print(
+                "Tip: If running in Docker or the callback isn't working, use --manual flag."
+            )
             return None, None, None
 
     finally:
-        # Stop the server
         server_should_stop.set()
         server_thread.join(timeout=5)
 
@@ -316,6 +389,7 @@ def perform_oauth_flow(
     port: int = DEFAULT_CALLBACK_PORT,
     config_path: Optional[str] = None,
     config_output: Optional[str] = None,
+    manual_mode: bool = False,
 ) -> Dict[str, Any]:
     """Run the OAuth flow to get Gmail access and refresh tokens.
 
@@ -364,6 +438,7 @@ def perform_oauth_flow(
         client_secret=client_secret,
         oauth_mode=oauth_mode,
         port=port,
+        manual_mode=manual_mode,
     )
 
     if not access_token or not refresh_token:
@@ -459,6 +534,12 @@ def main():
         help="OAuth mode: 'api' for Gmail REST API or 'imap' for IMAP/SMTP (Thunderbird credentials)",
     )
 
+    parser.add_argument(
+        "--manual",
+        action="store_true",
+        help="Use manual mode: paste redirect URL instead of running local server (useful in Docker)",
+    )
+
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO)
@@ -472,6 +553,7 @@ def main():
         port=args.port,
         config_path=args.config,
         config_output=args.output,
+        manual_mode=args.manual,
     )
 
 

@@ -185,6 +185,71 @@ uv run auth_setup --mode imap
 
 4. **Future Blocking**: Google may rotate these secrets or block access at any time.
 
+## Running Auth Setup
+
+### Local Development
+
+```bash
+uv run python -m workspace_secretary.browser_auth --mode imap
+```
+
+### Docker Environment
+
+When running in Docker, the localhost callback won't work. Use manual mode:
+
+```bash
+# Enter the container
+docker exec -it workspace-secretary bash
+
+# Run auth setup with manual mode
+python -m workspace_secretary.browser_auth --mode imap --manual
+```
+
+### Manual Mode (--manual flag)
+
+If the localhost callback doesn't work (Docker, remote server, WSL, etc.), use the `--manual` flag:
+
+```bash
+uv run python -m workspace_secretary.browser_auth --mode imap --manual
+```
+
+**Manual mode workflow:**
+
+1. Run the command with `--manual` flag
+2. Open the printed authorization URL in your browser
+3. Complete the Google authentication flow
+4. After approval, you'll be redirected to a localhost URL (which may not load)
+5. **Copy the full URL from your browser's address bar** (it contains `?code=...`)
+6. Paste the URL when prompted
+7. Tokens are extracted and saved automatically
+
+**Example:**
+```
+Authorization URL: https://accounts.google.com/o/oauth2/v2/auth?client_id=...
+
+Open the URL above in your browser.
+After authorizing, paste the redirect URL here: http://localhost:8080/callback?code=4/0AfJoh...&scope=...
+
+✓ Authorization successful! Tokens saved.
+```
+
+---
+
+## Redirect URIs by Provider
+
+Each OAuth provider has registered specific redirect URIs with Google. The auth setup uses `http://localhost:8080/callback` by default.
+
+| Provider | Registered Redirect URIs |
+|----------|-------------------------|
+| Mozilla Thunderbird | `http://localhost`, `http://localhost:*` (any port) |
+| GNOME Online Accounts | `http://127.0.0.1`, `http://localhost` |
+| Evolution Data Server | Uses GNOME credentials (same as above) |
+| Mailspring | `http://localhost:12141/auth` |
+
+**Note**: The `--manual` flag bypasses redirect URI issues entirely since you manually extract the authorization code from the URL.
+
+---
+
 ## Troubleshooting
 
 ### "Gmail API scopes not available" Error

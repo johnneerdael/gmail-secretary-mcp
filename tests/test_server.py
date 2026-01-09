@@ -13,7 +13,6 @@ from workspace_secretary.config import (
     ServerConfig,
     ImapConfig,
     WorkingHoursConfig,
-    OAuthMode,
     UserIdentityConfig,
 )
 
@@ -39,7 +38,6 @@ class TestServer:
             working_hours=working_hours,
             vip_senders=[],
             allowed_folders=["INBOX", "Sent"],
-            oauth_mode=OAuthMode.API,
             identity=UserIdentityConfig(email="test@example.com"),
         )
 
@@ -84,7 +82,6 @@ class TestServer:
             timezone="America/Los_Angeles",
             working_hours=working_hours,
             vip_senders=[],
-            oauth_mode=OAuthMode.API,
             identity=UserIdentityConfig(email="test@example.com"),
         )
         with mock.patch(
@@ -121,7 +118,6 @@ class TestServer:
             timezone="America/Los_Angeles",
             working_hours=working_hours,
             vip_senders=[],
-            oauth_mode=OAuthMode.IMAP,
             identity=UserIdentityConfig(email="test@example.com"),
         )
         mock_server._config = mock_config
@@ -170,7 +166,6 @@ class TestServer:
             timezone="America/Los_Angeles",
             working_hours=working_hours,
             vip_senders=[],
-            oauth_mode=OAuthMode.IMAP,
             identity=UserIdentityConfig(email="test@example.com"),
         )
 
@@ -215,7 +210,6 @@ class TestServer:
             working_hours=working_hours,
             vip_senders=[],
             allowed_folders=["INBOX", "Sent"],
-            oauth_mode=OAuthMode.API,
             identity=UserIdentityConfig(email="test@example.com"),
         )
 

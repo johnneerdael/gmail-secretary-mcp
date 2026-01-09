@@ -6,9 +6,7 @@ import os
 import sys
 
 from workspace_secretary.browser_auth import perform_oauth_flow
-from workspace_secretary.config import OAuthMode
 
-# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -43,18 +41,10 @@ def main():
         help="Path to save the updated config file (default: config.yaml)",
         default="config.yaml",
     )
-    parser.add_argument(
-        "--mode",
-        choices=["api", "imap"],
-        default="api",
-        help="OAuth mode: 'api' for Gmail REST API, 'imap' for IMAP/SMTP (default: api)",
-    )
 
     args = parser.parse_args()
-    oauth_mode = OAuthMode.API if args.mode == "api" else OAuthMode.IMAP
 
     try:
-        # Run the OAuth flow
         perform_oauth_flow(
             client_id=args.client_id,
             client_secret=args.client_secret,
@@ -62,7 +52,6 @@ def main():
             port=args.port,
             config_path=args.config,
             config_output=args.output,
-            oauth_mode=oauth_mode,
         )
         logger.info("Gmail authentication setup completed successfully")
     except KeyboardInterrupt:

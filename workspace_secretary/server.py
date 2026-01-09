@@ -15,7 +15,7 @@ from mcp.server.fastmcp import FastMCP
 from mcp.server.auth.provider import AccessToken, TokenVerifier
 from mcp.server.auth.settings import AuthSettings
 
-from workspace_secretary.config import ServerConfig, load_config, OAuthMode
+from workspace_secretary.config import ServerConfig, load_config
 from workspace_secretary.imap_client import ImapClient
 from workspace_secretary.calendar_client import CalendarClient
 from workspace_secretary.gmail_client import GmailClient
@@ -63,18 +63,9 @@ class ClientManager:
         self.calendar_client = CalendarClient(self.config)
         self.email_cache = EmailCache()
 
-        logger.info(
-            f"Starting server in {self.config.oauth_mode.value.upper()} mode..."
-        )
-
-        if self.config.oauth_mode == OAuthMode.API:
-            if self.config.imap.is_gmail and self.config.imap.oauth2:
-                logger.info("Connecting to Gmail REST API...")
-                self.gmail_client = GmailClient(self.config)
-                self.gmail_client.connect()
-        else:
-            logger.info("IMAP mode: Gmail REST API disabled, using SMTP for sending")
-            self.smtp_client = SMTPClient(self.config)
+        logger.info("Starting server in IMAP mode...")
+        logger.info("Using SMTP for sending")
+        self.smtp_client = SMTPClient(self.config)
 
         self._initialized = True
         logger.info("Client manager initialized (IMAP/Calendar connections deferred)")
@@ -203,9 +194,6 @@ async def server_lifespan(server: FastMCP) -> AsyncIterator[Dict]:
         "calendar_client": _client_manager.calendar_client,
         "gmail_client": _client_manager.gmail_client,
         "smtp_client": _client_manager.smtp_client,
-        "oauth_mode": _client_manager.config.oauth_mode
-        if _client_manager.config
-        else OAuthMode.IMAP,
         "config": _client_manager.config,
         "email_cache": _client_manager.email_cache,
     }
@@ -265,7 +253,7 @@ def create_server(
         config.database.backend.value == "postgres"
         and config.database.embeddings.enabled
     )
-    register_tools(server, imap_client, config.oauth_mode, enable_semantic_search)
+    register_tools(server, imap_client, enable_semantic_search)
 
     # Add server status tool
     @server.tool()

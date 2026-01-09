@@ -8,7 +8,6 @@ from typing import List, Optional, Union, Dict, Any
 
 from mcp.server.fastmcp import FastMCP, Context
 
-from workspace_secretary.config import OAuthMode
 from workspace_secretary.imap_client import ImapClient
 from workspace_secretary.calendar_client import CalendarClient
 from workspace_secretary.gmail_client import GmailClient
@@ -61,7 +60,6 @@ def _convert_gmail_query_to_imap(query: str) -> Dict[str, Any]:
 def register_tools(
     mcp: FastMCP,
     imap_client: ImapClient,
-    oauth_mode: OAuthMode,
     enable_semantic_search: bool = False,
 ) -> None:
     """Register MCP tools."""
@@ -957,178 +955,83 @@ def register_tools(
             logger.error(f"Error getting unread messages: {e}")
             return json.dumps({"error": str(e)}, indent=2)
 
-    if oauth_mode == OAuthMode.API:
+    @mcp.tool()
+    async def process_meeting_invite(
+        folder: str,
+        uid: int,
+        ctx: Context,
+    ) -> dict:
+        """Process a meeting invite email. Creates task and moves to Secretary/Calendar."""
+        from workspace_secretary.workflows.invite_parser import (
+            identify_meeting_invite_details,
+        )
 
-        @mcp.tool()
-        async def process_meeting_invite(
-            folder: str,
-            uid: int,
-            ctx: Context,
-            availability_mode: str = "random",
-        ) -> dict:
-            """Process a meeting invite email and create a draft reply (API mode).
+        client = get_client_from_context(ctx)
+        result: Dict[str, Any] = {
+            "status": "error",
+            "message": "An error occurred during processing",
+            "task_created": False,
+            "moved_to_folder": None,
+            "invite_details": None,
+        }
 
-            Workflow: identify invite → check calendar → draft accept/decline reply.
-            Requires calendar.events scope to accept/decline invites.
-            """
-            from workspace_secretary.workflows.invite_parser import (
-                identify_meeting_invite_details,
-            )
-            from workspace_secretary.workflows.calendar_mock import (
-                check_mock_availability,
-            )
-            from workspace_secretary.workflows.meeting_reply import (
-                generate_meeting_reply_content,
-            )
-            from workspace_secretary.smtp_client import create_reply_mime
-            from workspace_secretary.models import EmailAddress
+        try:
+            email_obj = client.fetch_email(uid, folder)
+            if not email_obj:
+                result["message"] = f"Email with UID {uid} not found in folder {folder}"
+                return result
 
-            client = get_client_from_context(ctx)
-            result: Dict[str, Any] = {
-                "status": "error",
-                "message": "An error occurred during processing",
-                "draft_uid": None,
-                "draft_folder": None,
-                "availability": None,
-            }
+            invite_result = identify_meeting_invite_details(email_obj)
+            if not invite_result["is_invite"]:
+                result["status"] = "not_invite"
+                result["message"] = "The email is not a meeting invite"
+                return result
+
+            invite_details = invite_result["details"]
+            result["invite_details"] = invite_details
+
+            task_desc = (
+                f"MEETING INVITE: {invite_details.get('subject', 'Unknown')} "
+                f"from {str(email_obj.from_)}"
+            )
+            if invite_details.get("start_time"):
+                task_desc += f" at {invite_details['start_time']}"
+
+            import os
+
+            tasks_file = os.path.join(os.getcwd(), "tasks.md")
+            task_entry = f"- [ ] {task_desc} (Priority: high)\n"
+            try:
+                with open(tasks_file, "a") as f:
+                    f.write(task_entry)
+                result["task_created"] = True
+            except Exception as task_err:
+                logger.warning(f"Failed to create task: {task_err}")
+
+            calendar_folder = "Secretary/Calendar"
+            if not client.folder_exists(calendar_folder):
+                client.create_folder(calendar_folder)
+
+            client.move_email(uid, folder, calendar_folder)
+            result["moved_to_folder"] = calendar_folder
 
             try:
-                email_obj = client.fetch_email(uid, folder)
-                if not email_obj:
-                    result["message"] = (
-                        f"Email with UID {uid} not found in folder {folder}"
-                    )
-                    return result
+                cache = get_email_cache_from_context(ctx)
+                if cache:
+                    cache.move_email(uid, folder, calendar_folder)
+            except Exception:
+                pass
 
-                invite_result = identify_meeting_invite_details(email_obj)
-                if not invite_result["is_invite"]:
-                    result["status"] = "not_invite"
-                    result["message"] = "The email is not a meeting invite"
-                    return result
-
-                invite_details = invite_result["details"]
-
-                availability_result = check_mock_availability(
-                    invite_details.get("start_time"),
-                    invite_details.get("end_time"),
-                    availability_mode,
-                )
-                result["availability"] = availability_result["available"]
-
-                reply_content = generate_meeting_reply_content(
-                    invite_details, availability_result
-                )
-
-                reply_from = EmailAddress(name="Me", address=client.config.username)
-                mime_message = create_reply_mime(
-                    original_email=email_obj,
-                    reply_to=reply_from,
-                    body=reply_content["reply_body"],
-                    subject=reply_content["reply_subject"],
-                    reply_all=False,
-                )
-
-                draft_uid = client.save_draft_mime(mime_message)
-                if draft_uid:
-                    action = "accept" if availability_result["available"] else "decline"
-                    result["status"] = "success"
-                    result["message"] = (
-                        f"Processed invite and saved {action} reply as draft"
-                    )
-                    result["draft_uid"] = str(draft_uid)
-                    result["draft_folder"] = client._get_drafts_folder()
-                else:
-                    result["message"] = "Failed to save draft"
-
-                return result
-
-            except Exception as e:
-                logger.error(f"Error processing meeting invite: {e}")
-                result["message"] = f"Error: {str(e)}"
-                return result
-
-    else:
-
-        @mcp.tool()
-        async def process_meeting_invite(
-            folder: str,
-            uid: int,
-            ctx: Context,
-        ) -> dict:
-            """Process a meeting invite email (IMAP mode). Creates task and moves to Secretary/Calendar."""
-            from workspace_secretary.workflows.invite_parser import (
-                identify_meeting_invite_details,
+            result["status"] = "success"
+            result["message"] = (
+                f"Meeting invite identified. Created task and moved to {calendar_folder}."
             )
+            return result
 
-            client = get_client_from_context(ctx)
-            result: Dict[str, Any] = {
-                "status": "error",
-                "message": "An error occurred during processing",
-                "task_created": False,
-                "moved_to_folder": None,
-                "invite_details": None,
-            }
-
-            try:
-                email_obj = client.fetch_email(uid, folder)
-                if not email_obj:
-                    result["message"] = (
-                        f"Email with UID {uid} not found in folder {folder}"
-                    )
-                    return result
-
-                invite_result = identify_meeting_invite_details(email_obj)
-                if not invite_result["is_invite"]:
-                    result["status"] = "not_invite"
-                    result["message"] = "The email is not a meeting invite"
-                    return result
-
-                invite_details = invite_result["details"]
-                result["invite_details"] = invite_details
-
-                task_desc = (
-                    f"MEETING INVITE: {invite_details.get('subject', 'Unknown')} "
-                    f"from {str(email_obj.from_)}"
-                )
-                if invite_details.get("start_time"):
-                    task_desc += f" at {invite_details['start_time']}"
-
-                import os
-
-                tasks_file = os.path.join(os.getcwd(), "tasks.md")
-                task_entry = f"- [ ] {task_desc} (Priority: high)\n"
-                try:
-                    with open(tasks_file, "a") as f:
-                        f.write(task_entry)
-                    result["task_created"] = True
-                except Exception as task_err:
-                    logger.warning(f"Failed to create task: {task_err}")
-
-                calendar_folder = "Secretary/Calendar"
-                if not client.folder_exists(calendar_folder):
-                    client.create_folder(calendar_folder)
-
-                client.move_email(uid, folder, calendar_folder)
-                result["moved_to_folder"] = calendar_folder
-
-                try:
-                    cache = get_email_cache_from_context(ctx)
-                    if cache:
-                        cache.move_email(uid, folder, calendar_folder)
-                except Exception:
-                    pass
-
-                result["status"] = "success"
-                result["message"] = (
-                    f"Meeting invite identified. Created task and moved to {calendar_folder}. "
-                    "Manual action required to accept/decline (IMAP mode limitation)."
-                )
-                return result
-
-            except Exception as e:
-                logger.error(f"Error processing meeting invite (IMAP): {e}")
-                result["message"] = f"Error: {str(e)}"
-                return result
+        except Exception as e:
+            logger.error(f"Error processing meeting invite: {e}")
+            result["message"] = f"Error: {str(e)}"
+            return result
 
     # --- Calendar Tools ---
 
@@ -1216,213 +1119,133 @@ def register_tools(
             logger.error(f"Error creating calendar event: {e}")
             return json.dumps({"error": str(e)}, indent=2)
 
-    if oauth_mode == OAuthMode.API:
+    @mcp.tool()
+    async def gmail_search(
+        query: str,
+        max_results: int = 20,
+        ctx: Context = None,  # type: ignore
+    ) -> str:
+        """Search emails using Gmail-like search syntax.
+        Supports common Gmail operators: from:, to:, subject:, is:unread, has:attachment.
 
-        @mcp.tool()
-        async def gmail_search(
-            query: str,
-            max_results: int = 20,
-            ctx: Context = None,  # type: ignore
-        ) -> str:
-            """Search emails using native Gmail search syntax.
-            Example queries: 'has:attachment', 'from:boss is:unread', 'after:2024/01/01'.
+        Args:
+            query: Search query string
+            max_results: Max results to return
+            ctx: MCP context
 
-            Args:
-                query: Gmail search query string
-                max_results: Max results to return
-                ctx: MCP context
+        Returns:
+            JSON list of message summaries
+        """
+        try:
+            cache = get_email_cache_from_context(ctx)
+            if cache:
+                is_unread = None
+                from_addr = None
+                subject_contains = None
 
-            Returns:
-                JSON list of message summaries
-            """
-            client = get_gmail_client_from_context(ctx)
-            try:
-                messages = client.search_messages(query, max_results)
-                results = []
-                for m in messages:
-                    full_msg = client.get_message(m["id"])
-                    if full_msg:
-                        results.append(
-                            {
-                                "id": full_msg.message_id,
-                                "threadId": full_msg.gmail_thread_id,
-                                "from": str(full_msg.from_),
-                                "subject": full_msg.subject,
-                                "date": full_msg.date.isoformat()
-                                if full_msg.date
-                                else None,
-                                "labels": full_msg.gmail_labels,
-                            }
-                        )
-                return json.dumps(results, indent=2)
-            except Exception as e:
-                logger.error(f"Error in gmail_search: {e}")
-                return json.dumps({"error": str(e)}, indent=2)
+                query_lower = query.lower()
+                if "is:unread" in query_lower:
+                    is_unread = True
+                if "is:read" in query_lower:
+                    is_unread = False
 
-        @mcp.tool()
-        async def gmail_get_thread(
-            thread_id: str,
-            ctx: Context = None,  # type: ignore
-        ) -> str:
-            """Get an entire conversation thread using Gmail API.
+                import re
 
-            Args:
-                thread_id: Gmail thread identifier
-                ctx: MCP context
+                from_match = re.search(r"from:(\S+)", query_lower)
+                if from_match:
+                    from_addr = from_match.group(1)
 
-            Returns:
-                JSON list of emails in the thread
-            """
-            client = get_gmail_client_from_context(ctx)
-            try:
-                emails = client.get_thread(thread_id)
-                results = []
-                for e in emails:
-                    results.append(
-                        {
-                            "id": e.message_id,
-                            "from": str(e.from_),
-                            "subject": e.subject,
-                            "date": e.date.isoformat() if e.date else None,
-                            "content": e.content.get_best_content(),
-                            "labels": e.gmail_labels,
-                        }
-                    )
-                return json.dumps(results, indent=2)
-            except Exception as e:
-                logger.error(f"Error in gmail_get_thread: {e}")
-                return json.dumps({"error": str(e)}, indent=2)
-    else:
-
-        @mcp.tool()
-        async def gmail_search(
-            query: str,
-            max_results: int = 20,
-            ctx: Context = None,  # type: ignore
-        ) -> str:
-            """Search emails using Gmail-like search syntax (IMAP mode).
-            Supports common Gmail operators: from:, to:, subject:, is:unread, has:attachment.
-
-            Args:
-                query: Search query string
-                max_results: Max results to return
-                ctx: MCP context
-
-            Returns:
-                JSON list of message summaries
-            """
-            try:
-                cache = get_email_cache_from_context(ctx)
-                if cache:
-                    is_unread = None
-                    from_addr = None
-                    subject_contains = None
-
-                    query_lower = query.lower()
-                    if "is:unread" in query_lower:
-                        is_unread = True
-                    if "is:read" in query_lower:
-                        is_unread = False
-
-                    import re
-
-                    from_match = re.search(r"from:(\S+)", query_lower)
-                    if from_match:
-                        from_addr = from_match.group(1)
-
-                    subject_match = re.search(
-                        r'subject:(["\']?)(.+?)\1(?:\s|$)', query, re.IGNORECASE
-                    )
-                    if subject_match:
-                        subject_contains = subject_match.group(2)
-
-                    emails = cache.search_emails(
-                        folder="INBOX",
-                        is_unread=is_unread,
-                        from_addr=from_addr,
-                        subject_contains=subject_contains,
-                        limit=max_results,
-                    )
-
-                    results = []
-                    for email in emails:
-                        results.append(
-                            {
-                                "id": email.get("message_id"),
-                                "uid": email["uid"],
-                                "from": email["from_addr"],
-                                "subject": email["subject"],
-                                "date": email["date"],
-                            }
-                        )
-                    return json.dumps(results, indent=2)
-            except Exception:
-                logging.debug("gmail_search: Cache not available, falling back to IMAP")
-
-            client = get_client_from_context(ctx)
-            try:
-                imap_criteria = _convert_gmail_query_to_imap(query)
-                uids = client.search(imap_criteria, folder="INBOX")
-                uids = uids[:max_results]
-                emails_dict = client.fetch_emails(uids, folder="INBOX")
-                results = []
-                for uid, email in emails_dict.items():
-                    results.append(
-                        {
-                            "id": email.message_id,
-                            "uid": uid,
-                            "from": str(email.from_),
-                            "subject": email.subject,
-                            "date": email.date.isoformat() if email.date else None,
-                        }
-                    )
-                return json.dumps(results, indent=2)
-            except Exception as e:
-                logger.error(f"Error in gmail_search (IMAP): {e}")
-                return json.dumps({"error": str(e)}, indent=2)
-
-        @mcp.tool()
-        async def gmail_get_thread(
-            thread_id: str,
-            ctx: Context = None,  # type: ignore
-        ) -> str:
-            """Get an entire conversation thread (IMAP mode).
-            Uses message threading headers (References, In-Reply-To).
-
-            Args:
-                thread_id: Message-ID or UID of any message in the thread
-                ctx: MCP context
-
-            Returns:
-                JSON list of emails in the thread
-            """
-            client = get_client_from_context(ctx)
-            try:
-                uid = int(thread_id)
-                emails = client.fetch_thread(uid)
-                results = []
-                for e in emails:
-                    results.append(
-                        {
-                            "id": e.message_id,
-                            "uid": e.uid,
-                            "from": str(e.from_),
-                            "subject": e.subject,
-                            "date": e.date.isoformat() if e.date else None,
-                            "content": e.content.get_best_content(),
-                        }
-                    )
-                return json.dumps(results, indent=2)
-            except ValueError:
-                return json.dumps(
-                    {
-                        "error": f"Invalid thread_id '{thread_id}'. In IMAP mode, use numeric UID."
-                    },
-                    indent=2,
+                subject_match = re.search(
+                    r'subject:(["\']?)(.+?)\1(?:\s|$)', query, re.IGNORECASE
                 )
-            except Exception as e:
-                logger.error(f"Error in gmail_get_thread (IMAP): {e}")
-                return json.dumps({"error": str(e)}, indent=2)
+                if subject_match:
+                    subject_contains = subject_match.group(2)
+
+                emails = cache.search_emails(
+                    folder="INBOX",
+                    is_unread=is_unread,
+                    from_addr=from_addr,
+                    subject_contains=subject_contains,
+                    limit=max_results,
+                )
+
+                results = []
+                for email in emails:
+                    results.append(
+                        {
+                            "id": email.get("message_id"),
+                            "uid": email["uid"],
+                            "from": email["from_addr"],
+                            "subject": email["subject"],
+                            "date": email["date"],
+                        }
+                    )
+                return json.dumps(results, indent=2)
+        except Exception:
+            logging.debug("gmail_search: Cache not available, falling back to IMAP")
+
+        client = get_client_from_context(ctx)
+        try:
+            imap_criteria = _convert_gmail_query_to_imap(query)
+            uids = client.search(imap_criteria, folder="INBOX")
+            uids = uids[:max_results]
+            emails_dict = client.fetch_emails(uids, folder="INBOX")
+            results = []
+            for uid, email in emails_dict.items():
+                results.append(
+                    {
+                        "id": email.message_id,
+                        "uid": uid,
+                        "from": str(email.from_),
+                        "subject": email.subject,
+                        "date": email.date.isoformat() if email.date else None,
+                    }
+                )
+            return json.dumps(results, indent=2)
+        except Exception as e:
+            logger.error(f"Error in gmail_search: {e}")
+            return json.dumps({"error": str(e)}, indent=2)
+
+    @mcp.tool()
+    async def gmail_get_thread(
+        thread_id: str,
+        ctx: Context = None,  # type: ignore
+    ) -> str:
+        """Get an entire conversation thread.
+        Uses message threading headers (References, In-Reply-To).
+
+        Args:
+            thread_id: Message UID of any message in the thread
+            ctx: MCP context
+
+        Returns:
+            JSON list of emails in the thread
+        """
+        client = get_client_from_context(ctx)
+        try:
+            uid = int(thread_id)
+            emails = client.fetch_thread(uid)
+            results = []
+            for e in emails:
+                results.append(
+                    {
+                        "id": e.message_id,
+                        "uid": e.uid,
+                        "from": str(e.from_),
+                        "subject": e.subject,
+                        "date": e.date.isoformat() if e.date else None,
+                        "content": e.content.get_best_content(),
+                    }
+                )
+            return json.dumps(results, indent=2)
+        except ValueError:
+            return json.dumps(
+                {"error": f"Invalid thread_id '{thread_id}'. Use numeric UID."},
+                indent=2,
+            )
+        except Exception as e:
+            logger.error(f"Error in gmail_get_thread: {e}")
+            return json.dumps({"error": str(e)}, indent=2)
 
     @mcp.tool()
     async def get_calendar_availability(
@@ -1448,569 +1271,309 @@ def register_tools(
             logger.error(f"Error getting calendar availability: {e}")
             return json.dumps({"error": str(e)}, indent=2)
 
-    if oauth_mode == OAuthMode.API:
+    @mcp.tool()
+    async def get_daily_briefing(
+        date: Optional[str] = None,
+        ctx: Context = None,  # type: ignore
+    ) -> str:
+        """Get a combined briefing of calendar events and candidate emails for prioritization.
+        Returns high-recall email candidates with signals for LLM-based prioritization.
 
-        @mcp.tool()
-        async def get_daily_briefing(
-            date: Optional[str] = None,
-            ctx: Context = None,  # type: ignore
-        ) -> str:
-            """Get a combined briefing of calendar events and candidate emails for prioritization.
-            Returns high-recall email candidates with signals for LLM-based prioritization.
-            Defaults to today in configured timezone.
+        Args:
+            date: Optional date in YYYY-MM-DD format. Defaults to today.
+            ctx: MCP context
 
-            Args:
-                date: Optional date in YYYY-MM-DD format. Defaults to today.
-                ctx: MCP context
+        Returns:
+            JSON object with 'calendar_events' and 'email_candidates' (with signals)
+        """
+        from datetime import datetime, time
+        from zoneinfo import ZoneInfo
+        import re
 
-            Returns:
-                JSON object with 'calendar_events' and 'email_candidates' (with signals)
-            """
-            from datetime import datetime, time, timedelta
-            from zoneinfo import ZoneInfo
-            import re
+        cal_client = get_calendar_client_from_context(ctx)
+        imap_client = get_client_from_context(ctx)
+        server_config = get_server_config_from_context(ctx)
 
-            cal_client = get_calendar_client_from_context(ctx)
-            gmail_client = get_gmail_client_from_context(ctx)
+        tz = ZoneInfo(server_config.timezone)
+        vip_senders = set(server_config.vip_senders)
 
-            config = gmail_client.config
-            tz = ZoneInfo(config.timezone)
-            vip_senders = set(config.vip_senders)
+        if date:
+            target_date = datetime.strptime(date, "%Y-%m-%d").replace(tzinfo=tz)
+        else:
+            target_date = datetime.now(tz)
 
-            if date:
-                target_date = datetime.strptime(date, "%Y-%m-%d").replace(tzinfo=tz)
-            else:
-                target_date = datetime.now(tz)
+        start_of_day = datetime.combine(target_date.date(), time.min, tzinfo=tz)
+        end_of_day = datetime.combine(target_date.date(), time.max, tzinfo=tz)
 
-            start_of_day = datetime.combine(target_date.date(), time.min, tzinfo=tz)
-            end_of_day = datetime.combine(target_date.date(), time.max, tzinfo=tz)
+        briefing: Dict[str, Any] = {
+            "date": target_date.strftime("%Y-%m-%d"),
+            "timezone": server_config.timezone,
+            "calendar_events": [],
+            "email_candidates": [],
+        }
 
-            start_of_day_rfc = start_of_day.isoformat()
-            end_of_day_rfc = end_of_day.isoformat()
-
-            briefing: Dict[str, Any] = {
-                "date": target_date.strftime("%Y-%m-%d"),
-                "timezone": config.timezone,
-                "calendar_events": [],
-                "email_candidates": [],
-            }
-
-            try:
-                events = cal_client.list_events(start_of_day_rfc, end_of_day_rfc)
-                for event in events:
-                    briefing["calendar_events"].append(
-                        {
-                            "summary": event.get("summary"),
-                            "start": event.get("start", {}).get("dateTime")
-                            or event.get("start", {}).get("date"),
-                            "end": event.get("end", {}).get("dateTime")
-                            or event.get("end", {}).get("date"),
-                            "location": event.get("location"),
-                            "hangoutLink": event.get("hangoutLink"),
-                        }
-                    )
-
-                base_query = (
-                    "is:unread newer_than:7d -category:social -category:promotions"
-                )
-                important_query = "is:unread is:important newer_than:14d"
-
-                seen_ids: set = set()
-                candidates = []
-
-                for query in [base_query, important_query]:
-                    messages = gmail_client.search_messages(query, max_results=30)
-                    for m in messages:
-                        msg_id = m["id"]
-                        if msg_id in seen_ids:
-                            continue
-                        seen_ids.add(msg_id)
-
-                        full_msg = gmail_client.get_message(msg_id)
-                        if full_msg:
-                            candidates.append(full_msg)
-
-                identity = config.identity
-
-                for email in candidates:
-                    sender = str(email.from_).lower()
-                    subject = email.subject.lower()
-                    snippet = email.get_snippet(200).lower()
-                    labels = email.gmail_labels or []
-
-                    to_addresses = [str(addr).lower() for addr in email.to]
-                    is_addressed_to_me = any(
-                        identity.matches_email(addr) for addr in to_addresses
-                    )
-
-                    body_text = email.content.get_best_content()
-                    mentions_my_name = identity.matches_name(body_text)
-
-                    signals = {
-                        "is_important": "IMPORTANT" in labels,
-                        "is_from_vip": any(vip in sender for vip in vip_senders),
-                        "is_addressed_to_me": is_addressed_to_me,
-                        "mentions_my_name": mentions_my_name,
-                        "has_question": "?" in subject
-                        or "?" in snippet
-                        or bool(
-                            re.search(
-                                r"\b(can you|could you|please|would you)\b", snippet
-                            )
-                        ),
-                        "mentions_deadline": bool(
-                            re.search(
-                                r"\b(eod|asap|urgent|deadline|due|by \w+day|by end of)\b",
-                                snippet,
-                            )
-                        ),
-                        "mentions_meeting": bool(
-                            re.search(
-                                r"\b(meet|meeting|schedule|calendar|invite|zoom|google meet|call)\b",
-                                snippet,
-                            )
-                        ),
-                    }
-
-                    briefing["email_candidates"].append(
-                        {
-                            "id": email.message_id,
-                            "thread_id": email.gmail_thread_id,
-                            "from": str(email.from_),
-                            "subject": email.subject,
-                            "date": email.date.isoformat() if email.date else None,
-                            "snippet": email.get_snippet(150),
-                            "labels": labels,
-                            "signals": signals,
-                        }
-                    )
-
-                return json.dumps(briefing, indent=2)
-            except Exception as e:
-                logger.error(f"Error generating daily briefing: {e}")
-                return json.dumps({"error": str(e)}, indent=2)
-
-        @mcp.tool()
-        async def send_email(
-            to: Union[str, List[str]],
-            subject: str,
-            body: str,
-            cc: Optional[Union[str, List[str]]] = None,
-            thread_id: Optional[str] = None,
-            ctx: Context = None,  # type: ignore
-        ) -> str:
-            """Send an email using the Gmail API.
-            CRITICAL SAFETY: This tool performs a mutation (sending an email).
-            Always ensure you have confirmed the content with the user before calling this.
-
-            Args:
-                to: Recipient email address or list of addresses
-                subject: Email subject
-                body: Email body (plain text)
-                cc: Optional CC addresses
-                thread_id: Optional Gmail thread ID to reply within
-                ctx: MCP context
-
-            Returns:
-                JSON status message
-            """
-            import email.message
-            import base64
-
-            gmail_client = get_gmail_client_from_context(ctx)
-
-            try:
-                msg = email.message.EmailMessage()
-                msg.set_content(body)
-                msg["Subject"] = subject
-                msg["From"] = gmail_client.config.imap.username
-
-                if isinstance(to, list):
-                    msg["To"] = ", ".join(to)
-                else:
-                    msg["To"] = to
-
-                if cc:
-                    if isinstance(cc, list):
-                        msg["Cc"] = ", ".join(cc)
-                    else:
-                        msg["Cc"] = cc
-
-                raw = base64.urlsafe_b64encode(msg.as_bytes()).decode("utf-8")
-                message_body = {"raw": raw}
-                if thread_id:
-                    message_body["threadId"] = thread_id
-
-                result = gmail_client.send_message(message_body)
-                return json.dumps(
+        try:
+            events = cal_client.list_events(
+                start_of_day.isoformat(), end_of_day.isoformat()
+            )
+            for event in events:
+                briefing["calendar_events"].append(
                     {
-                        "status": "success",
-                        "message_id": result.get("id"),
-                        "thread_id": result.get("threadId"),
-                    },
-                    indent=2,
-                )
-
-            except Exception as e:
-                logger.error(f"Error sending email: {e}")
-                return json.dumps({"error": str(e)}, indent=2)
-
-        @mcp.tool()
-        async def summarize_thread(
-            thread_id: str,
-            ctx: Context = None,  # type: ignore
-        ) -> str:
-            """Fetch a full conversation thread and provide a structured summary context.
-            Optimized for identifying decisions and pending actions.
-
-            Args:
-                thread_id: Gmail thread identifier
-                ctx: MCP context
-
-            Returns:
-                JSON summary of the thread
-            """
-            gmail_client = get_gmail_client_from_context(ctx)
-
-            try:
-                emails = gmail_client.get_thread(thread_id)
-                if not emails:
-                    return json.dumps({"error": "Thread not found or empty"}, indent=2)
-
-                thread_summary = {
-                    "thread_id": thread_id,
-                    "subject": emails[0].subject,
-                    "participant_count": len(set(str(e.from_) for e in emails)),
-                    "message_count": len(emails),
-                    "messages": [],
-                }
-
-                for e in emails:
-                    thread_summary["messages"].append(
-                        {
-                            "from": str(e.from_),
-                            "date": e.date.isoformat() if e.date else None,
-                            "content": e.content.get_best_content()[:2000],
-                        }
-                    )
-
-                return json.dumps(thread_summary, indent=2)
-            except Exception as e:
-                logger.error(f"Error summarizing thread: {e}")
-                return json.dumps({"error": str(e)}, indent=2)
-    else:
-
-        @mcp.tool()
-        async def get_daily_briefing(
-            date: Optional[str] = None,
-            ctx: Context = None,  # type: ignore
-        ) -> str:
-            """Get a combined briefing of calendar events and candidate emails for prioritization (IMAP mode).
-            Returns high-recall email candidates with signals for LLM-based prioritization.
-
-            Args:
-                date: Optional date in YYYY-MM-DD format. Defaults to today.
-                ctx: MCP context
-
-            Returns:
-                JSON object with 'calendar_events' and 'email_candidates' (with signals)
-            """
-            from datetime import datetime, time
-            from zoneinfo import ZoneInfo
-            import re
-
-            cal_client = get_calendar_client_from_context(ctx)
-            imap_client = get_client_from_context(ctx)
-            server_config = get_server_config_from_context(ctx)
-
-            tz = ZoneInfo(server_config.timezone)
-            vip_senders = set(server_config.vip_senders)
-
-            if date:
-                target_date = datetime.strptime(date, "%Y-%m-%d").replace(tzinfo=tz)
-            else:
-                target_date = datetime.now(tz)
-
-            start_of_day = datetime.combine(target_date.date(), time.min, tzinfo=tz)
-            end_of_day = datetime.combine(target_date.date(), time.max, tzinfo=tz)
-
-            briefing: Dict[str, Any] = {
-                "date": target_date.strftime("%Y-%m-%d"),
-                "timezone": server_config.timezone,
-                "calendar_events": [],
-                "email_candidates": [],
-            }
-
-            try:
-                events = cal_client.list_events(
-                    start_of_day.isoformat(), end_of_day.isoformat()
-                )
-                for event in events:
-                    briefing["calendar_events"].append(
-                        {
-                            "summary": event.get("summary"),
-                            "start": event.get("start", {}).get("dateTime")
-                            or event.get("start", {}).get("date"),
-                            "end": event.get("end", {}).get("dateTime")
-                            or event.get("end", {}).get("date"),
-                            "location": event.get("location"),
-                            "hangoutLink": event.get("hangoutLink"),
-                        }
-                    )
-
-                emails_data = []
-                try:
-                    cache = get_email_cache_from_context(ctx)
-                    if cache:
-                        cached_emails = cache.get_unread_emails(
-                            folder="INBOX", limit=50
-                        )
-                        for email in cached_emails:
-                            emails_data.append(
-                                {
-                                    "uid": email["uid"],
-                                    "message_id": email.get("message_id"),
-                                    "from_": email.get("from_addr", ""),
-                                    "subject": email.get("subject") or "",
-                                    "to_addr": email.get("to_addr") or "",
-                                    "body_text": email.get("body_text")
-                                    or email.get("body_html")
-                                    or "",
-                                    "date": email.get("date"),
-                                }
-                            )
-                except Exception:
-                    pass
-
-                if not emails_data:
-                    imap_client = get_client_from_context(ctx)
-                    uids = imap_client.search({"UNSEEN": True}, folder="INBOX")
-                    uids = uids[:50]
-                    emails_dict = imap_client.fetch_emails(uids, folder="INBOX")
-                    for uid, email in emails_dict.items():
-                        emails_data.append(
-                            {
-                                "uid": uid,
-                                "message_id": email.message_id,
-                                "from_": str(email.from_),
-                                "subject": email.subject or "",
-                                "to_addr": ", ".join(str(addr) for addr in email.to),
-                                "body_text": email.content.get_best_content(),
-                                "date": email.date.isoformat() if email.date else None,
-                            }
-                        )
-
-                identity = server_config.identity
-
-                for email_data in emails_data:
-                    sender = email_data["from_"].lower()
-                    subject = email_data["subject"].lower()
-                    body_text = email_data["body_text"]
-                    snippet = body_text[:200].lower()
-
-                    to_addresses = [
-                        addr.strip().lower()
-                        for addr in email_data["to_addr"].split(",")
-                        if addr.strip()
-                    ]
-                    is_addressed_to_me = any(
-                        identity.matches_email(addr) for addr in to_addresses
-                    )
-
-                    mentions_my_name = identity.matches_name(body_text)
-
-                    signals = {
-                        "is_important": False,
-                        "is_from_vip": any(vip in sender for vip in vip_senders),
-                        "is_addressed_to_me": is_addressed_to_me,
-                        "mentions_my_name": mentions_my_name,
-                        "has_question": "?" in subject
-                        or "?" in snippet
-                        or bool(
-                            re.search(
-                                r"\b(can you|could you|please|would you)\b", snippet
-                            )
-                        ),
-                        "mentions_deadline": bool(
-                            re.search(
-                                r"\b(eod|asap|urgent|deadline|due|by \w+day|by end of)\b",
-                                snippet,
-                            )
-                        ),
-                        "mentions_meeting": bool(
-                            re.search(
-                                r"\b(meet|meeting|schedule|calendar|invite|zoom|google meet|call)\b",
-                                snippet,
-                            )
-                        ),
+                        "summary": event.get("summary"),
+                        "start": event.get("start", {}).get("dateTime")
+                        or event.get("start", {}).get("date"),
+                        "end": event.get("end", {}).get("dateTime")
+                        or event.get("end", {}).get("date"),
+                        "location": event.get("location"),
+                        "hangoutLink": event.get("hangoutLink"),
                     }
-
-                    briefing["email_candidates"].append(
-                        {
-                            "id": email_data["message_id"],
-                            "uid": email_data["uid"],
-                            "from": email_data["from_"],
-                            "subject": email_data["subject"],
-                            "date": email_data["date"],
-                            "snippet": body_text[:150],
-                            "signals": signals,
-                        }
-                    )
-
-                return json.dumps(briefing, indent=2)
-            except Exception as e:
-                logger.error(f"Error generating daily briefing (IMAP): {e}")
-                return json.dumps({"error": str(e)}, indent=2)
-
-        @mcp.tool()
-        async def send_email(
-            to: Union[str, List[str]],
-            subject: str,
-            body: str,
-            cc: Optional[Union[str, List[str]]] = None,
-            thread_id: Optional[str] = None,
-            ctx: Context = None,  # type: ignore
-        ) -> str:
-            """Send an email using SMTP with OAuth2.
-            CRITICAL SAFETY: This tool performs a mutation (sending an email).
-            Always ensure you have confirmed the content with the user before calling this.
-
-            Args:
-                to: Recipient email address or list of addresses
-                subject: Email subject
-                body: Email body (plain text)
-                cc: Optional CC addresses
-                thread_id: Optional thread UID (ignored in IMAP mode, use reply tools instead)
-                ctx: MCP context
-
-            Returns:
-                JSON status message
-            """
-            import email.message
-
-            smtp_client = get_smtp_client_from_context(ctx)
-
-            try:
-                msg = email.message.EmailMessage()
-                msg.set_content(body)
-                msg["Subject"] = subject
-                msg["From"] = smtp_client.config.imap.username
-
-                if isinstance(to, list):
-                    msg["To"] = ", ".join(to)
-                else:
-                    msg["To"] = to
-
-                if cc:
-                    if isinstance(cc, list):
-                        msg["Cc"] = ", ".join(cc)
-                    else:
-                        msg["Cc"] = cc
-
-                smtp_client.send_message(msg)
-                return json.dumps(
-                    {
-                        "status": "success",
-                        "message": f"Email sent to {to}",
-                    },
-                    indent=2,
                 )
 
-            except Exception as e:
-                logger.error(f"Error sending email (SMTP): {e}")
-                return json.dumps({"error": str(e)}, indent=2)
-
-        @mcp.tool()
-        async def summarize_thread(
-            thread_id: str,
-            ctx: Context = None,  # type: ignore
-        ) -> str:
-            """Fetch a full conversation thread and provide a structured summary context (IMAP mode).
-            Optimized for identifying decisions and pending actions.
-
-            Args:
-                thread_id: Message UID of any message in the thread
-                ctx: MCP context
-
-            Returns:
-                JSON summary of the thread
-            """
-            try:
-                uid = int(thread_id)
-            except ValueError:
-                return json.dumps(
-                    {"error": f"Invalid thread_id '{thread_id}'. Use numeric UID."},
-                    indent=2,
-                )
-
+            emails_data = []
             try:
                 cache = get_email_cache_from_context(ctx)
                 if cache:
-                    thread_emails = cache.get_thread_emails(uid, "INBOX")
-                    if thread_emails:
-                        sorted_emails = sorted(
-                            thread_emails, key=lambda e: e.get("date") or ""
+                    cached_emails = cache.get_unread_emails(folder="INBOX", limit=50)
+                    for email in cached_emails:
+                        emails_data.append(
+                            {
+                                "uid": email["uid"],
+                                "message_id": email.get("message_id"),
+                                "from_": email.get("from_addr", ""),
+                                "subject": email.get("subject") or "",
+                                "to_addr": email.get("to_addr") or "",
+                                "body_text": email.get("body_text")
+                                or email.get("body_html")
+                                or "",
+                                "date": email.get("date"),
+                            }
                         )
-                        participants = set(
-                            e.get("from_addr", "") for e in sorted_emails
-                        )
-
-                        thread_summary = {
-                            "thread_id": thread_id,
-                            "subject": sorted_emails[0].get("subject")
-                            if sorted_emails
-                            else "",
-                            "participant_count": len(participants),
-                            "message_count": len(sorted_emails),
-                            "messages": [],
-                        }
-
-                        for e in sorted_emails:
-                            content = (e.get("body_text") or e.get("body_html") or "")[
-                                :2000
-                            ]
-                            thread_summary["messages"].append(
-                                {
-                                    "from": e.get("from_addr"),
-                                    "date": e.get("date"),
-                                    "content": content,
-                                }
-                            )
-
-                        return json.dumps(thread_summary, indent=2)
             except Exception:
-                logging.debug(
-                    "summarize_thread: Cache not available, falling back to IMAP"
-                )
+                pass
 
-            imap_client = get_client_from_context(ctx)
-
-            try:
-                emails = imap_client.fetch_thread(uid)
-                if not emails:
-                    return json.dumps({"error": "Thread not found or empty"}, indent=2)
-
-                thread_summary = {
-                    "thread_id": thread_id,
-                    "subject": emails[0].subject,
-                    "participant_count": len(set(str(e.from_) for e in emails)),
-                    "message_count": len(emails),
-                    "messages": [],
-                }
-
-                for e in emails:
-                    thread_summary["messages"].append(
+            if not emails_data:
+                imap_client = get_client_from_context(ctx)
+                uids = imap_client.search({"UNSEEN": True}, folder="INBOX")
+                uids = uids[:50]
+                emails_dict = imap_client.fetch_emails(uids, folder="INBOX")
+                for uid, email in emails_dict.items():
+                    emails_data.append(
                         {
-                            "from": str(e.from_),
-                            "date": e.date.isoformat() if e.date else None,
-                            "content": e.content.get_best_content()[:2000],
+                            "uid": uid,
+                            "message_id": email.message_id,
+                            "from_": str(email.from_),
+                            "subject": email.subject or "",
+                            "to_addr": ", ".join(str(addr) for addr in email.to),
+                            "body_text": email.content.get_best_content(),
+                            "date": email.date.isoformat() if email.date else None,
                         }
                     )
 
-                return json.dumps(thread_summary, indent=2)
-            except Exception as e:
-                logger.error(f"Error summarizing thread (IMAP): {e}")
-                return json.dumps({"error": str(e)}, indent=2)
+            identity = server_config.identity
+
+            for email_data in emails_data:
+                sender = email_data["from_"].lower()
+                subject = email_data["subject"].lower()
+                body_text = email_data["body_text"]
+                snippet = body_text[:200].lower()
+
+                to_addresses = [
+                    addr.strip().lower()
+                    for addr in email_data["to_addr"].split(",")
+                    if addr.strip()
+                ]
+                is_addressed_to_me = any(
+                    identity.matches_email(addr) for addr in to_addresses
+                )
+
+                mentions_my_name = identity.matches_name(body_text)
+
+                signals = {
+                    "is_important": False,
+                    "is_from_vip": any(vip in sender for vip in vip_senders),
+                    "is_addressed_to_me": is_addressed_to_me,
+                    "mentions_my_name": mentions_my_name,
+                    "has_question": "?" in subject
+                    or "?" in snippet
+                    or bool(
+                        re.search(r"\b(can you|could you|please|would you)\b", snippet)
+                    ),
+                    "mentions_deadline": bool(
+                        re.search(
+                            r"\b(eod|asap|urgent|deadline|due|by \w+day|by end of)\b",
+                            snippet,
+                        )
+                    ),
+                    "mentions_meeting": bool(
+                        re.search(
+                            r"\b(meet|meeting|schedule|calendar|invite|zoom|google meet|call)\b",
+                            snippet,
+                        )
+                    ),
+                }
+
+                briefing["email_candidates"].append(
+                    {
+                        "id": email_data["message_id"],
+                        "uid": email_data["uid"],
+                        "from": email_data["from_"],
+                        "subject": email_data["subject"],
+                        "date": email_data["date"],
+                        "snippet": body_text[:150],
+                        "signals": signals,
+                    }
+                )
+
+            return json.dumps(briefing, indent=2)
+        except Exception as e:
+            logger.error(f"Error generating daily briefing: {e}")
+            return json.dumps({"error": str(e)}, indent=2)
+
+    @mcp.tool()
+    async def send_email(
+        to: Union[str, List[str]],
+        subject: str,
+        body: str,
+        cc: Optional[Union[str, List[str]]] = None,
+        thread_id: Optional[str] = None,
+        ctx: Context = None,  # type: ignore
+    ) -> str:
+        """Send an email using SMTP with OAuth2.
+        CRITICAL SAFETY: This tool performs a mutation (sending an email).
+        Always ensure you have confirmed the content with the user before calling this.
+
+        Args:
+            to: Recipient email address or list of addresses
+            subject: Email subject
+            body: Email body (plain text)
+            cc: Optional CC addresses
+            thread_id: Optional thread UID (ignored, use reply tools instead)
+            ctx: MCP context
+
+        Returns:
+            JSON status message
+        """
+        import email.message
+
+        smtp_client = get_smtp_client_from_context(ctx)
+
+        try:
+            msg = email.message.EmailMessage()
+            msg.set_content(body)
+            msg["Subject"] = subject
+            msg["From"] = smtp_client.config.imap.username
+
+            if isinstance(to, list):
+                msg["To"] = ", ".join(to)
+            else:
+                msg["To"] = to
+
+            if cc:
+                if isinstance(cc, list):
+                    msg["Cc"] = ", ".join(cc)
+                else:
+                    msg["Cc"] = cc
+
+            smtp_client.send_message(msg)
+            return json.dumps(
+                {
+                    "status": "success",
+                    "message": f"Email sent to {to}",
+                },
+                indent=2,
+            )
+
+        except Exception as e:
+            logger.error(f"Error sending email: {e}")
+            return json.dumps({"error": str(e)}, indent=2)
+
+    @mcp.tool()
+    async def summarize_thread(
+        thread_id: str,
+        ctx: Context = None,  # type: ignore
+    ) -> str:
+        """Fetch a full conversation thread and provide a structured summary context.
+        Optimized for identifying decisions and pending actions.
+
+        Args:
+            thread_id: Message UID of any message in the thread
+            ctx: MCP context
+
+        Returns:
+            JSON summary of the thread
+        """
+        try:
+            uid = int(thread_id)
+        except ValueError:
+            return json.dumps(
+                {"error": f"Invalid thread_id '{thread_id}'. Use numeric UID."},
+                indent=2,
+            )
+
+        try:
+            cache = get_email_cache_from_context(ctx)
+            if cache:
+                thread_emails = cache.get_thread_emails(uid, "INBOX")
+                if thread_emails:
+                    sorted_emails = sorted(
+                        thread_emails, key=lambda e: e.get("date") or ""
+                    )
+                    participants = set(e.get("from_addr", "") for e in sorted_emails)
+
+                    thread_summary = {
+                        "thread_id": thread_id,
+                        "subject": sorted_emails[0].get("subject")
+                        if sorted_emails
+                        else "",
+                        "participant_count": len(participants),
+                        "message_count": len(sorted_emails),
+                        "messages": [],
+                    }
+
+                    for e in sorted_emails:
+                        content = (e.get("body_text") or e.get("body_html") or "")[
+                            :2000
+                        ]
+                        thread_summary["messages"].append(
+                            {
+                                "from": e.get("from_addr"),
+                                "date": e.get("date"),
+                                "content": content,
+                            }
+                        )
+
+                    return json.dumps(thread_summary, indent=2)
+        except Exception:
+            logging.debug("summarize_thread: Cache not available, falling back to IMAP")
+
+        imap_client = get_client_from_context(ctx)
+
+        try:
+            emails = imap_client.fetch_thread(uid)
+            if not emails:
+                return json.dumps({"error": "Thread not found or empty"}, indent=2)
+
+            thread_summary = {
+                "thread_id": thread_id,
+                "subject": emails[0].subject,
+                "participant_count": len(set(str(e.from_) for e in emails)),
+                "message_count": len(emails),
+                "messages": [],
+            }
+
+            for e in emails:
+                thread_summary["messages"].append(
+                    {
+                        "from": str(e.from_),
+                        "date": e.date.isoformat() if e.date else None,
+                        "content": e.content.get_best_content()[:2000],
+                    }
+                )
+
+            return json.dumps(thread_summary, indent=2)
+        except Exception as e:
+            logger.error(f"Error summarizing thread: {e}")
+            return json.dumps({"error": str(e)}, indent=2)
 
     @mcp.tool()
     async def suggest_reschedule(

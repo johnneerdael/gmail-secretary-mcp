@@ -10,7 +10,6 @@ from typing import Any, Dict, Optional
 
 import yaml
 
-from workspace_secretary.config import OAuth2Config, OAuthMode
 from workspace_secretary.browser_auth import load_client_credentials, run_local_server
 
 logging.basicConfig(level=logging.INFO)
@@ -67,7 +66,6 @@ def setup_gmail_oauth2(
         access_token, refresh_token, token_expiry = run_local_server(
             client_id=client_id,
             client_secret=client_secret,
-            oauth_mode=OAuthMode.IMAP,
             manual_mode=manual_mode,
         )
         if not refresh_token:

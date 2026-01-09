@@ -12,7 +12,6 @@ from workspace_secretary.config import (
     ServerConfig,
     WorkingHoursConfig,
     OAuth2Config,
-    OAuthMode,
     UserIdentityConfig,
     load_config,
 )
@@ -163,7 +162,6 @@ class TestServerConfig:
             timezone="America/Los_Angeles",
             working_hours=working_hours,
             vip_senders=[],
-            oauth_mode=OAuthMode.API,
             identity=UserIdentityConfig(email="test@example.com"),
         )
         assert server_config.imap == imap_config
@@ -180,7 +178,6 @@ class TestServerConfig:
             working_hours=working_hours,
             vip_senders=["boss@example.com"],
             allowed_folders=allowed_folders,
-            oauth_mode=OAuthMode.API,
             identity=UserIdentityConfig(email="test@example.com"),
         )
         assert server_config.imap == imap_config
@@ -189,7 +186,6 @@ class TestServerConfig:
 
     def test_from_dict(self, monkeypatch):
         """Test creating ServerConfig from a dictionary."""
-        monkeypatch.setenv("OAUTH_MODE", "api")
         data = {
             "imap": {
                 "host": "imap.example.com",
@@ -224,7 +220,6 @@ class TestServerConfig:
                 "username": "test@example.com",
                 "password": "password",
             },
-            "oauth_mode": "api",
             "timezone": "UTC",
             "working_hours": {
                 "start": "09:00",
@@ -250,7 +245,6 @@ class TestLoadConfig:
 
     def test_load_from_file(self, monkeypatch):
         """Test loading configuration from a file."""
-        monkeypatch.setenv("OAUTH_MODE", "api")
         config_data = {
             "imap": {
                 "host": "imap.example.com",
@@ -299,7 +293,6 @@ class TestLoadConfig:
         ]:
             monkeypatch.delenv(env_var, raising=False)
 
-        monkeypatch.setenv("OAUTH_MODE", "api")
         config_data = {
             "imap": {
                 "host": "imap.example.com",
@@ -352,7 +345,6 @@ class TestLoadConfig:
     def test_load_from_env_variables(self, monkeypatch):
         """Test loading configuration from environment variables."""
         # Set environment variables
-        monkeypatch.setenv("OAUTH_MODE", "api")
         monkeypatch.setenv("IMAP_HOST", "imap.example.com")
         monkeypatch.setenv("IMAP_PORT", "993")
         monkeypatch.setenv("IMAP_USERNAME", "test@example.com")
@@ -498,7 +490,6 @@ class TestServerConfigWithNewFields:
             timezone="America/Los_Angeles",
             working_hours=working_hours,
             vip_senders=["boss@example.com", "ceo@example.com"],
-            oauth_mode=OAuthMode.API,
             identity=UserIdentityConfig(email="test@gmail.com"),
         )
 
@@ -525,7 +516,6 @@ class TestServerConfigWithNewFields:
                 timezone="Invalid/Timezone",
                 working_hours=working_hours,
                 vip_senders=[],
-                oauth_mode=OAuthMode.API,
                 identity=UserIdentityConfig(email="test@gmail.com"),
             )
         assert "Invalid timezone" in str(excinfo.value)
@@ -548,7 +538,6 @@ class TestServerConfigWithNewFields:
             timezone="America/Los_Angeles",
             working_hours=working_hours,
             vip_senders=["Boss@Example.com", "CEO@Example.COM"],
-            oauth_mode=OAuthMode.API,
             identity=UserIdentityConfig(email="test@gmail.com"),
         )
 
@@ -574,7 +563,6 @@ class TestServerConfigWithNewFields:
                 imap=imap_config,
                 working_hours=working_hours,
                 vip_senders=[],
-                oauth_mode=OAuthMode.IMAP,
                 identity=identity,
             )
 
@@ -594,13 +582,11 @@ class TestServerConfigWithNewFields:
                 imap=imap_config,
                 timezone="America/Los_Angeles",
                 vip_senders=[],
-                oauth_mode=OAuthMode.IMAP,
                 identity=identity,
             )
 
     def test_from_dict_with_new_fields(self, monkeypatch):
         """Test creating ServerConfig from dict with new fields."""
-        monkeypatch.setenv("OAUTH_MODE", "api")
         data = {
             "imap": {
                 "host": "imap.gmail.com",

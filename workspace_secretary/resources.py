@@ -6,7 +6,7 @@ from typing import Any
 
 from mcp.server.fastmcp import FastMCP, Context
 
-from workspace_secretary.config import OAuthMode, ServerConfig
+from workspace_secretary.config import ServerConfig
 from workspace_secretary.imap_client import ImapClient
 from workspace_secretary.calendar_client import CalendarClient
 from workspace_secretary.gmail_client import GmailClient
@@ -15,14 +15,6 @@ from workspace_secretary.cache import EmailCache
 from workspace_secretary.models import Email
 
 logger = logging.getLogger(__name__)
-
-
-def get_oauth_mode_from_context(ctx: Context) -> OAuthMode:
-    ctx_any: Any = ctx
-    oauth_mode = ctx_any.request_context.lifespan_context.get("oauth_mode")
-    if not oauth_mode:
-        raise RuntimeError("OAuth mode not available in context")
-    return oauth_mode
 
 
 def get_server_config_from_context(ctx: Context) -> ServerConfig:

@@ -15,37 +15,18 @@ from urllib.parse import urlencode, urlparse, parse_qs
 import yaml
 from flask import Flask, request, redirect, url_for
 
-from workspace_secretary.config import OAuthMode
-
 logger = logging.getLogger(__name__)
 
 # Gmail OAuth2 endpoints
 GMAIL_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 GMAIL_TOKEN_URL = "https://oauth2.googleapis.com/token"
 
-# Scopes for API mode (Gmail REST API + Calendar API)
-API_MODE_SCOPES = [
-    "https://mail.google.com/",
-    "https://www.googleapis.com/auth/gmail.readonly",
-    "https://www.googleapis.com/auth/gmail.modify",
-    "https://www.googleapis.com/auth/gmail.send",
-    "https://www.googleapis.com/auth/calendar",
-    "https://www.googleapis.com/auth/calendar.events",
-]
-
-# Scopes for IMAP mode (IMAP/SMTP protocol + Calendar API)
+# OAuth scopes for IMAP/SMTP protocol + Calendar API
 # Compatible with Thunderbird/GNOME OAuth credentials
-IMAP_MODE_SCOPES = [
+OAUTH_SCOPES = [
     "https://mail.google.com/",
     "https://www.googleapis.com/auth/calendar",
 ]
-
-
-def get_scopes_for_mode(oauth_mode: OAuthMode) -> list[str]:
-    if oauth_mode == OAuthMode.API:
-        return API_MODE_SCOPES
-    else:
-        return IMAP_MODE_SCOPES
 
 
 # Local server details
@@ -150,7 +131,6 @@ def create_oauth_app() -> Flask:
 def run_local_server(
     client_id: str,
     client_secret: str,
-    oauth_mode: OAuthMode,
     port: int = DEFAULT_CALLBACK_PORT,
     host: str = DEFAULT_CALLBACK_HOST,
     manual_mode: bool = False,
@@ -174,7 +154,7 @@ def run_local_server(
         "client_id": client_id,
         "redirect_uri": redirect_uri,
         "response_type": "code",
-        "scope": " ".join(get_scopes_for_mode(oauth_mode)),
+        "scope": " ".join(OAUTH_SCOPES),
         "access_type": "offline",
         "state": state,
         "prompt": "consent",
@@ -382,7 +362,6 @@ def load_client_credentials(credentials_file: str) -> Tuple[str, str]:
 
 
 def perform_oauth_flow(
-    oauth_mode: OAuthMode,
     client_id: Optional[str] = None,
     client_secret: Optional[str] = None,
     credentials_file: Optional[str] = None,
@@ -436,7 +415,6 @@ def perform_oauth_flow(
     access_token, refresh_token, expiry = run_local_server(
         client_id=client_id,
         client_secret=client_secret,
-        oauth_mode=oauth_mode,
         port=port,
         manual_mode=manual_mode,
     )
@@ -529,13 +507,6 @@ def main():
         default="config.yaml",
     )
     parser.add_argument(
-        "--mode",
-        choices=["api", "imap"],
-        required=True,
-        help="OAuth mode: 'api' for Gmail REST API or 'imap' for IMAP/SMTP (Thunderbird credentials)",
-    )
-
-    parser.add_argument(
         "--manual",
         action="store_true",
         help="Use manual mode: paste redirect URL instead of running local server (useful in Docker)",
@@ -545,10 +516,7 @@ def main():
 
     logging.basicConfig(level=logging.INFO)
 
-    oauth_mode = OAuthMode.from_string(args.mode)
-
     perform_oauth_flow(
-        oauth_mode=oauth_mode,
         client_id=args.client_id,
         client_secret=args.client_secret,
         port=args.port,

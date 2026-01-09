@@ -52,7 +52,7 @@ jobs:
 
       - name: Build with VitePress
         # Run build inside the docs folder
-        run: npm run docs:build
+        run: npm run build
         working-directory: docs
 
       - name: Upload artifact

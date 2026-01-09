@@ -1,6 +1,6 @@
 services:
   workspace-secretary:
-    image: ghcr.io/johnneerdael/mail-automation-mcp:latest
+    image: ghcr.io/johnneerdael/google-workspace-secretary-mcp:latest
     container_name: workspace-secretary
     restart: always
     ports:

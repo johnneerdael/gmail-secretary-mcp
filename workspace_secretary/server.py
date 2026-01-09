@@ -260,7 +260,12 @@ def create_server(
 
     # Register resources and tools
     register_resources(server, imap_client)
-    register_tools(server, imap_client, config.oauth_mode)
+
+    enable_semantic_search = (
+        config.database.backend.value == "postgres"
+        and config.database.embeddings.enabled
+    )
+    register_tools(server, imap_client, config.oauth_mode, enable_semantic_search)
 
     # Add server status tool
     @server.tool()

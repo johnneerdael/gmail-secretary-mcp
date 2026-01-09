@@ -182,49 +182,191 @@ This will:
 2. Ask you to grant permissions (read/write Gmail, read/write Calendar)
 3. Save a `token.json` file for future use
 
-## Connecting to Claude Desktop
+## Connecting AI Coding Agents
 
-Once the server is running, connect it to Claude Desktop via MCP.
+Once the server is running on `http://localhost:8000`, connect it to your preferred AI coding agent.
 
-**1. Edit Claude Desktop config:**
+The server uses **Streamable HTTP** transport at the `/mcp` endpoint: `http://localhost:8000/mcp`
 
-On macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+### Claude Code (CLI)
 
-On Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+```bash
+claude mcp add --transport http workspace-secretary http://localhost:8000/mcp
+```
 
-**2. Add the MCP server:**
+### Claude Desktop
+
+Open Claude Desktop and navigate to **Settings > Connectors > Add Custom Connector**:
+- Name: `workspace-secretary`
+- URL: `http://localhost:8000/mcp`
+
+Or edit `claude_desktop_config.json` manually:
+
+**macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+**Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
 
 ```json
 {
   "mcpServers": {
     "workspace-secretary": {
-      "command": "docker",
-      "args": ["exec", "-i", "workspace-secretary", "uv", "run", "python", "-m", "workspace_secretary.server"],
-      "env": {}
+      "url": "http://localhost:8000/mcp"
     }
   }
 }
 ```
 
-**Alternatively, for local development:**
+### Cursor
+
+Go to **Settings → Cursor Settings → MCP → Add new global MCP server**, or edit `~/.cursor/mcp.json`:
 
 ```json
 {
   "mcpServers": {
     "workspace-secretary": {
-      "command": "python",
-      "args": ["-m", "workspace_secretary.server"],
-      "env": {
-        "CONFIG_PATH": "/absolute/path/to/config.yaml"
+      "url": "http://localhost:8000/mcp"
+    }
+  }
+}
+```
+
+### VS Code (GitHub Copilot)
+
+Add to your VS Code settings (`.vscode/settings.json` or user settings):
+
+```json
+{
+  "mcp": {
+    "servers": {
+      "workspace-secretary": {
+        "type": "http",
+        "url": "http://localhost:8000/mcp"
       }
     }
   }
 }
 ```
 
-**3. Restart Claude Desktop**
+### Windsurf
 
-Claude will now have access to all Google Workspace Secretary tools.
+Edit your Windsurf MCP config file:
+
+```json
+{
+  "mcpServers": {
+    "workspace-secretary": {
+      "serverUrl": "http://localhost:8000/mcp"
+    }
+  }
+}
+```
+
+### Cline
+
+1. Open **Cline** in VS Code
+2. Click the hamburger menu → **MCP Servers**
+3. Choose **Remote Servers** tab → **Edit Configuration**
+4. Add:
+
+```json
+{
+  "mcpServers": {
+    "workspace-secretary": {
+      "url": "http://localhost:8000/mcp",
+      "type": "streamableHttp"
+    }
+  }
+}
+```
+
+### OpenCode
+
+Add to your OpenCode configuration:
+
+```json
+{
+  "mcp": {
+    "workspace-secretary": {
+      "type": "remote",
+      "url": "http://localhost:8000/mcp",
+      "enabled": true
+    }
+  }
+}
+```
+
+### Zed
+
+Add to your Zed `settings.json`:
+
+```json
+{
+  "context_servers": {
+    "workspace-secretary": {
+      "settings": {
+        "url": "http://localhost:8000/mcp"
+      }
+    }
+  }
+}
+```
+
+### JetBrains AI Assistant
+
+1. Go to **Settings → Tools → AI Assistant → Model Context Protocol (MCP)**
+2. Click **+ Add** → **As JSON**
+3. Add:
+
+```json
+{
+  "mcpServers": {
+    "workspace-secretary": {
+      "url": "http://localhost:8000/mcp"
+    }
+  }
+}
+```
+
+### Roo Code / Kilo Code
+
+```json
+{
+  "mcpServers": {
+    "workspace-secretary": {
+      "type": "streamable-http",
+      "url": "http://localhost:8000/mcp"
+    }
+  }
+}
+```
+
+### Gemini CLI
+
+Edit `~/.gemini/settings.json`:
+
+```json
+{
+  "mcpServers": {
+    "workspace-secretary": {
+      "httpUrl": "http://localhost:8000/mcp",
+      "headers": {
+        "Accept": "application/json, text/event-stream"
+      }
+    }
+  }
+}
+```
+
+### Generic HTTP Configuration
+
+For any MCP client supporting Streamable HTTP:
+
+| Setting | Value |
+|---------|-------|
+| Type | `http` / `streamable-http` |
+| URL | `http://localhost:8000/mcp` |
+| Transport | Streamable HTTP |
+
+**Restart your AI client** after adding the configuration.
 
 ## Verify Installation
 

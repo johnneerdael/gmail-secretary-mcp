@@ -31,6 +31,29 @@ DEFAULT_CALLBACK_HOST = "localhost"
 CALLBACK_PATH = "/oauth2callback"
 SUCCESS_PATH = "/success"
 
+
+def _notify_engine_to_enroll() -> None:
+    """Notify running Engine to trigger enrollment after credentials are saved."""
+    import requests
+
+    engine_url = os.environ.get("ENGINE_URL", "http://localhost:8000")
+    try:
+        response = requests.post(f"{engine_url}/api/enroll", timeout=5)
+        if response.status_code == 200:
+            result = response.json()
+            if result.get("enrolled"):
+                print("✓ Engine notified - sync starting")
+            else:
+                print(f"Note: {result.get('message', 'Engine enrollment pending')}")
+        else:
+            print("Note: Engine will detect credentials within 5 seconds")
+    except requests.exceptions.ConnectionError:
+        print("Note: Engine not running - credentials saved for next startup")
+    except Exception as e:
+        logger.debug(f"Could not notify engine: {e}")
+        print("Note: Engine will detect credentials within 5 seconds")
+
+
 auth_tokens: Dict[str, Any] = {
     "access_token": None,
     "refresh_token": None,
@@ -409,6 +432,8 @@ def setup_gmail_oauth2(
         with open(token_file, "w") as f:
             json.dump(token_data, f, indent=2)
             logger.info(f"Saved tokens to {token_output}")
+
+        _notify_engine_to_enroll()
 
     print("\n" + "=" * 60)
     print("OAuth2 Setup Complete!")

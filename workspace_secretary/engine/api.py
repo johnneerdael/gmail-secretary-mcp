@@ -648,6 +648,34 @@ async def get_status():
     }
 
 
+@app.post("/api/enroll")
+async def trigger_enroll():
+    """Trigger enrollment attempt. Called by auth_setup after saving credentials."""
+    if state.enrolled:
+        return {"status": "ok", "message": "Already enrolled", "enrolled": True}
+
+    if state.enrollment_task:
+        state.enrollment_task.cancel()
+        try:
+            await state.enrollment_task
+        except asyncio.CancelledError:
+            pass
+        state.enrollment_task = None
+
+    success = await try_enroll()
+    if success:
+        logger.info("Enrollment triggered successfully, starting sync loop")
+        state.sync_task = asyncio.create_task(sync_loop())
+        return {"status": "ok", "message": "Enrollment successful", "enrolled": True}
+    else:
+        state.enrollment_task = asyncio.create_task(enrollment_watch_loop())
+        return {
+            "status": "pending",
+            "message": state.enrollment_error or "Enrollment failed",
+            "enrolled": False,
+        }
+
+
 # ============================================================================
 # Sync endpoints
 # ============================================================================

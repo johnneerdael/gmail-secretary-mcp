@@ -1,0 +1,1884 @@
+2026-01-09 21:46:13,949 CRIT Supervisor is running as root.  Privileges were not dropped because no user is specified in the config file.  If you intend to run as root, you can set user=root in the config file to avoid this message.
+2026-01-09 21:46:13,951 INFO supervisord started with pid 1
+2026-01-09 21:46:14,954 INFO spawned: 'engine' with pid 7
+2026-01-09 21:46:14,955 INFO spawned: 'mcp-server' with pid 8
+2026-01-09 21:46:15,957 INFO success: engine entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+   Building workspace-secretary @ file:///app
+2026-01-09 21:46:18,804 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+      Built workspace-secretary @ file:///app
+Uninstalled 1 package in 29ms
+Installed 1 package in 1ms
+INFO:     Started server process [52]
+INFO:     Waiting for application startup.
+2026-01-09 21:46:24,170 - workspace_secretary.engine.api - INFO - Starting secretary-engine...
+2026-01-09 21:46:24,175 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+2026-01-09 21:46:24,176 - workspace_secretary.engine.api - WARNING - Enrollment attempt failed: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:46:24,176 - workspace_secretary.engine.api - INFO - OAuth not configured - waiting for enrollment...
+2026-01-09 21:46:24,176 - workspace_secretary.engine.api - INFO - Run 'auth_setup' to complete OAuth enrollment
+2026-01-09 21:46:24,176 - workspace_secretary.engine.api - INFO - Starting enrollment watch loop...
+2026-01-09 21:46:24,176 - workspace_secretary.engine.api - INFO - Detected config.yaml change
+2026-01-09 21:46:24,182 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+2026-01-09 21:46:24,183 - workspace_secretary.engine.api - WARNING - Enrollment attempt failed: Gmail requires either an app-specific password or OAuth2 credentials
+INFO:     Application startup complete.
+INFO:     Uvicorn running on unix socket /tmp/secretary-engine.sock (Press CTRL+C to quit)
+2026-01-09 21:46:24,301 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:46:24,305 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:46:24,461 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:46:25,463 INFO spawned: 'mcp-server' with pid 54
+2026-01-09 21:46:28,278 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:46:28,282 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:46:28,437 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:46:29,439 INFO spawned: 'mcp-server' with pid 58
+2026-01-09 21:46:32,443 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:46:32,813 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:46:32,817 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:46:32,971 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:46:33,974 INFO spawned: 'mcp-server' with pid 62
+2026-01-09 21:46:36,978 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:46:37,378 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:46:37,383 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:46:37,548 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:46:38,551 INFO spawned: 'mcp-server' with pid 66
+2026-01-09 21:46:41,528 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:46:41,532 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:46:41,685 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:46:41,685 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:46:42,689 INFO spawned: 'mcp-server' with pid 70
+2026-01-09 21:46:45,693 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:46:45,995 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:46:46,000 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:46:46,154 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:46:47,158 INFO spawned: 'mcp-server' with pid 74
+2026-01-09 21:46:50,162 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:46:50,573 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:46:50,578 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:46:50,756 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:46:51,759 INFO spawned: 'mcp-server' with pid 78
+2026-01-09 21:46:54,763 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:46:55,172 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:46:55,177 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:46:55,361 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:46:56,364 INFO spawned: 'mcp-server' with pid 82
+2026-01-09 21:46:59,367 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:47:03,213 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:47:03,221 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:47:03,467 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:47:04,471 INFO spawned: 'mcp-server' with pid 86
+2026-01-09 21:47:07,475 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:47:08,739 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:47:08,744 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:47:08,941 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:47:09,944 INFO spawned: 'mcp-server' with pid 90
+2026-01-09 21:47:12,948 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:47:13,969 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:47:13,977 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:47:14,217 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:47:15,221 INFO spawned: 'mcp-server' with pid 94
+2026-01-09 21:47:18,225 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:47:19,622 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:47:19,629 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:47:19,838 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:47:20,841 INFO spawned: 'mcp-server' with pid 98
+2026-01-09 21:47:23,845 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:47:25,503 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:47:25,510 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:47:25,718 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:47:26,723 INFO spawned: 'mcp-server' with pid 102
+2026-01-09 21:47:29,726 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:47:32,151 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:47:32,158 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:47:32,373 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:47:33,377 INFO spawned: 'mcp-server' with pid 106
+2026-01-09 21:47:36,380 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:47:39,022 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:47:39,030 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:47:39,257 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:47:40,260 INFO spawned: 'mcp-server' with pid 110
+2026-01-09 21:47:43,264 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:47:44,485 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:47:44,491 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:47:44,695 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:47:45,699 INFO spawned: 'mcp-server' with pid 114
+2026-01-09 21:47:48,703 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:47:50,918 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:47:50,927 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:47:51,176 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:47:52,180 INFO spawned: 'mcp-server' with pid 118
+2026-01-09 21:47:55,183 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:47:57,254 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:47:57,260 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:47:57,450 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:47:58,455 INFO spawned: 'mcp-server' with pid 122
+2026-01-09 21:48:01,458 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:48:03,998 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:48:04,006 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:48:04,253 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:48:05,257 INFO spawned: 'mcp-server' with pid 126
+2026-01-09 21:48:08,260 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:48:09,659 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:48:09,666 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:48:09,856 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:48:10,860 INFO spawned: 'mcp-server' with pid 130
+2026-01-09 21:48:13,863 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:48:16,456 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:48:16,463 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:48:16,719 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:48:17,723 INFO spawned: 'mcp-server' with pid 134
+2026-01-09 21:48:20,726 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:48:21,683 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:48:21,690 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:48:21,942 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:48:22,945 INFO spawned: 'mcp-server' with pid 138
+2026-01-09 21:48:25,950 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:48:28,286 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:48:28,303 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:48:28,602 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:48:29,606 INFO spawned: 'mcp-server' with pid 142
+2026-01-09 21:48:32,609 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:48:34,609 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:48:34,619 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:48:34,886 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:48:35,890 INFO spawned: 'mcp-server' with pid 147
+2026-01-09 21:48:38,894 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:48:41,448 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:48:41,455 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:48:41,702 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:48:42,705 INFO spawned: 'mcp-server' with pid 151
+2026-01-09 21:48:45,709 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:48:46,756 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:48:46,764 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:48:47,021 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:48:48,025 INFO spawned: 'mcp-server' with pid 155
+2026-01-09 21:48:51,029 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:48:53,147 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:48:53,158 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:48:53,354 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:48:54,357 INFO spawned: 'mcp-server' with pid 159
+2026-01-09 21:48:57,360 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:48:58,524 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:48:58,532 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:48:58,775 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:48:59,779 INFO spawned: 'mcp-server' with pid 163
+2026-01-09 21:49:02,783 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:49:04,155 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:49:04,162 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:49:04,369 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:49:05,373 INFO spawned: 'mcp-server' with pid 167
+2026-01-09 21:49:08,377 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:49:11,026 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:49:11,033 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:49:11,251 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:49:12,254 INFO spawned: 'mcp-server' with pid 171
+2026-01-09 21:49:15,258 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:49:16,599 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:49:16,604 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:49:16,814 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:49:17,817 INFO spawned: 'mcp-server' with pid 175
+2026-01-09 21:49:20,821 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:49:23,021 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:49:23,031 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:49:23,282 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:49:24,285 INFO spawned: 'mcp-server' with pid 179
+2026-01-09 21:49:27,289 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:49:29,717 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:49:29,725 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:49:29,952 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:49:30,955 INFO spawned: 'mcp-server' with pid 183
+2026-01-09 21:49:33,959 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:49:36,658 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:49:36,667 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:49:36,908 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:49:37,912 INFO spawned: 'mcp-server' with pid 187
+2026-01-09 21:49:40,915 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:49:43,148 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:49:43,157 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:49:43,408 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:49:44,412 INFO spawned: 'mcp-server' with pid 191
+2026-01-09 21:49:47,416 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:49:48,914 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:49:48,921 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:49:49,136 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:49:50,139 INFO spawned: 'mcp-server' with pid 195
+2026-01-09 21:49:53,144 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:49:55,934 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:49:55,942 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:49:56,194 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:49:57,197 INFO spawned: 'mcp-server' with pid 199
+2026-01-09 21:50:00,201 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:50:02,710 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:50:02,718 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:50:03,001 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:50:04,004 INFO spawned: 'mcp-server' with pid 203
+2026-01-09 21:50:07,008 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:50:08,969 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:50:08,980 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:50:09,281 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:50:10,284 INFO spawned: 'mcp-server' with pid 207
+2026-01-09 21:50:13,290 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:50:16,027 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:50:16,033 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:50:16,214 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:50:17,217 INFO spawned: 'mcp-server' with pid 211
+2026-01-09 21:50:20,221 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:50:22,009 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:50:22,020 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:50:22,322 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:50:23,326 INFO spawned: 'mcp-server' with pid 215
+2026-01-09 21:50:26,330 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:50:29,090 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:50:29,099 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:50:29,342 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:50:30,346 INFO spawned: 'mcp-server' with pid 219
+2026-01-09 21:50:33,349 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:50:35,660 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:50:35,667 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:50:35,877 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:50:36,880 INFO spawned: 'mcp-server' with pid 223
+2026-01-09 21:50:39,883 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:50:40,834 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:50:40,842 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:50:41,091 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:50:42,095 INFO spawned: 'mcp-server' with pid 227
+2026-01-09 21:50:45,099 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:50:47,639 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:50:47,646 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:50:47,882 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:50:48,886 INFO spawned: 'mcp-server' with pid 231
+2026-01-09 21:50:51,889 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:50:55,490 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:50:55,498 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:50:55,742 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:50:56,745 INFO spawned: 'mcp-server' with pid 235
+2026-01-09 21:50:59,751 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:51:04,025 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:51:04,033 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:51:04,278 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:51:05,282 INFO spawned: 'mcp-server' with pid 239
+2026-01-09 21:51:08,286 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:51:09,944 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:51:09,956 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:51:10,261 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:51:11,265 INFO spawned: 'mcp-server' with pid 243
+2026-01-09 21:51:14,269 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:51:18,190 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:51:18,198 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:51:18,473 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:51:19,478 INFO spawned: 'mcp-server' with pid 247
+2026-01-09 21:51:22,481 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:51:23,770 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:51:23,777 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:51:23,971 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:51:24,975 INFO spawned: 'mcp-server' with pid 251
+2026-01-09 21:51:27,979 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:51:29,054 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:51:29,063 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:51:29,315 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:51:30,320 INFO spawned: 'mcp-server' with pid 255
+2026-01-09 21:51:33,324 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:51:36,828 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:51:36,836 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:51:37,054 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:51:38,058 INFO spawned: 'mcp-server' with pid 259
+2026-01-09 21:51:41,062 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:51:43,471 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:51:43,479 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:51:43,729 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:51:44,733 INFO spawned: 'mcp-server' with pid 263
+2026-01-09 21:51:47,736 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:51:49,181 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:51:49,188 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:51:49,396 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:51:50,400 INFO spawned: 'mcp-server' with pid 267
+2026-01-09 21:51:53,404 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:51:54,873 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:51:54,880 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:51:55,066 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:51:56,070 INFO spawned: 'mcp-server' with pid 271
+2026-01-09 21:51:59,073 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:52:00,098 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:52:00,107 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:52:00,359 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:52:01,363 INFO spawned: 'mcp-server' with pid 275
+2026-01-09 21:52:04,367 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:52:08,104 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:52:08,113 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:52:08,362 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:52:09,366 INFO spawned: 'mcp-server' with pid 279
+2026-01-09 21:52:12,370 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:52:16,695 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:52:16,712 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:52:16,990 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:52:17,994 INFO spawned: 'mcp-server' with pid 283
+2026-01-09 21:52:20,999 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:52:25,202 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:52:25,211 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:52:25,455 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:52:26,459 INFO spawned: 'mcp-server' with pid 287
+2026-01-09 21:52:29,463 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:52:33,288 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:52:33,310 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:52:33,648 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:52:34,651 INFO spawned: 'mcp-server' with pid 291
+2026-01-09 21:52:37,655 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:52:40,910 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:52:40,919 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:52:41,137 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:52:42,141 INFO spawned: 'mcp-server' with pid 295
+2026-01-09 21:52:45,145 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:52:46,777 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:52:46,790 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:52:47,032 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:52:48,037 INFO spawned: 'mcp-server' with pid 299
+2026-01-09 21:52:51,044 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:52:54,684 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:52:54,691 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:52:54,922 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:52:55,926 INFO spawned: 'mcp-server' with pid 303
+2026-01-09 21:52:58,930 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:53:01,451 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:53:01,460 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:53:01,700 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:53:02,703 INFO spawned: 'mcp-server' with pid 307
+2026-01-09 21:53:05,707 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:53:07,046 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:53:07,052 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:53:07,238 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:53:08,241 INFO spawned: 'mcp-server' with pid 311
+2026-01-09 21:53:11,244 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:53:12,116 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:53:12,124 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:53:12,410 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:53:13,415 INFO spawned: 'mcp-server' with pid 315
+2026-01-09 21:53:16,419 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:53:19,095 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:53:19,106 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:53:19,364 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:53:20,368 INFO spawned: 'mcp-server' with pid 319
+2026-01-09 21:53:23,372 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:53:27,097 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:53:27,105 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:53:27,316 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:53:28,319 INFO spawned: 'mcp-server' with pid 323
+2026-01-09 21:53:31,323 INFO success: mcp-server entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-01-09 21:53:35,554 - workspace_secretary - INFO - Initializing MCP server...
+2026-01-09 21:53:35,563 - workspace_secretary.config - INFO - Loaded configuration from /app/config/config.yaml
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/app/workspace_secretary/server.py", line 504, in <module>
+    main()
+  File "/app/workspace_secretary/server.py", line 487, in main
+    server = create_server(config_path=args.config, debug=args.debug)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/server.py", line 104, in create_server
+    _state.initialize(config_path)
+  File "/app/workspace_secretary/server.py", line 35, in initialize
+    self.config = load_config(config_path)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 538, in load_config
+    return ServerConfig.from_dict(config_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 445, in from_dict
+    imap=ImapConfig.from_dict(data.get("imap", {})),
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/workspace_secretary/config.py", line 93, in from_dict
+    raise ValueError(
+ValueError: Gmail requires either an app-specific password or OAuth2 credentials
+2026-01-09 21:53:35,838 WARN exited: mcp-server (exit status 1; not expected)
+2026-01-09 21:53:36,842 INFO spawned: 'mcp-server' with pid 327

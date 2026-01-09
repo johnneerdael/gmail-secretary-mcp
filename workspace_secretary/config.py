@@ -89,13 +89,14 @@ class ImapConfig:
         host = data.get("host", "")
         is_gmail = host.endswith("gmail.com") or host.endswith("googlemail.com")
 
+        # Log warning if credentials missing - server will start but remain unenrolled
         if is_gmail and not oauth2_config and not password:
-            raise ValueError(
-                "Gmail requires either an app-specific password or OAuth2 credentials"
+            logger.warning(
+                "Gmail credentials not configured - run auth_setup to authenticate"
             )
         elif not is_gmail and not password:
-            raise ValueError(
-                "IMAP password must be specified in config or IMAP_PASSWORD environment variable"
+            logger.warning(
+                "IMAP password not configured - server will start but email sync disabled"
             )
 
         return cls(

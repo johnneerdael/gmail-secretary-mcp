@@ -84,33 +84,36 @@ docker compose logs -f
 
 ## Volume Mounts
 
-The container requires specific volume mounts:
+The container requires a single volume mount:
 
-| Host Path | Container Path | Mode | Purpose |
-|-----------|----------------|------|---------|
-| `./config.yaml` | `/app/config/config.yaml` | `:ro` | Configuration (read-only) |
-| `./config/` | `/app/config/` | (rw) | SQLite cache + token storage |
-| `./token.json` | `/app/config/token.json` | `:rw` | OAuth tokens (read-write) |
+| Host Path | Container Path | Purpose |
+|-----------|----------------|---------|
+| `./config/` | `/app/config/` | Configuration, tokens, and SQLite cache |
 
-::: warning Critical: Correct Mount Pattern
 ```yaml
-# ✅ Correct - config read-only, token read-write, all in /app/config
+# ✅ Correct - single folder mount
 volumes:
-  - ./config.yaml:/app/config/config.yaml:ro
   - ./config:/app/config
-  - ./token.json:/app/config/token.json:rw
+```
 
-# ❌ Wrong - paths don't match container expectations
+Your `config/` folder should contain:
+- `config.yaml` - Configuration file
+- `token.json` - OAuth tokens (created by auth setup)
+- `email_cache.db` - SQLite cache (created automatically)
+
+::: warning Do NOT use multiple conflicting mounts
+```yaml
+# ❌ Wrong - conflicting mounts cause issues
 volumes:
-  - ./config.yaml:/app/config.yaml:ro  # Wrong: should be /app/config/config.yaml
-  - ./token.json:/app/token.json       # Wrong: should be /app/config/token.json
+  - ./config.yaml:/app/config/config.yaml:ro  # This conflicts with folder mount
+  - ./config:/app/config                       # Folder mount overwrites file mount
 ```
 :::
 
-**Why this structure?**
-- `config.yaml` is read-only (`:ro`) for security
-- `token.json` must be read-write for OAuth token refresh
-- Everything under `/app/config/` keeps paths consistent
+**Why a single folder mount?**
+- Simpler configuration
+- No conflicting mount issues
+- All state in one place for easy backup
 
 ## Email Cache Behavior
 

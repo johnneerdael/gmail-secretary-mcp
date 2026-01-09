@@ -60,8 +60,6 @@ services:
       postgres:
         condition: service_healthy
     volumes:
-      - ./config.yaml:/app/config/config.yaml:ro
-      - ./token.json:/app/config/token.json
       - ./config:/app/config
     environment:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}

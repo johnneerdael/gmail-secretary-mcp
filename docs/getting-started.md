@@ -105,13 +105,10 @@ services:
     restart: always
     ports:
       - "8000:8000"
-     volumes:
-       - ./config.yaml:/app/config/config.yaml:ro
-       - ./token.json:/app/config/token.json
-       - ./data:/app/data
-     environment:
-       - LOG_LEVEL=INFO
-
+    volumes:
+      - ./config:/app/config
+    environment:
+      - LOG_LEVEL=INFO
 ```
 
 ::: tip Single Container, Two Processes
@@ -131,9 +128,7 @@ touch token.json
 # With credentials.json from Google Cloud Console
 docker run -it --rm \
   -v $(pwd)/credentials.json:/app/credentials.json:ro \
-  -v $(pwd)/token.json:/app/config/token.json \
-  -v $(pwd)/config.yaml:/app/config/config.yaml:ro \
-
+  -v $(pwd)/config:/app/config \
   ghcr.io/johnneerdael/google-workspace-secretary-mcp:latest \
   python -m workspace_secretary.auth_setup \
     --credentials-file /app/credentials.json \
@@ -145,8 +140,7 @@ Or pass credentials directly without a file:
 
 ```bash
 docker run -it --rm \
-  -v $(pwd)/token.json:/app/config/token.json \
-  -v $(pwd)/config.yaml:/app/config/config.yaml:ro \
+  -v $(pwd)/config:/app/config \
   ghcr.io/johnneerdael/google-workspace-secretary-mcp:latest \
   python -m workspace_secretary.auth_setup \
     --client-id "YOUR_CLIENT_ID.apps.googleusercontent.com" \
@@ -276,9 +270,7 @@ services:
   workspace-secretary:
     image: ghcr.io/johnneerdael/google-workspace-secretary-mcp:latest
     volumes:
-      - ./config.yaml:/app/config/config.yaml:ro
-      - ./token.json:/app/config/token.json
-      - ./data:/app/data
+      - ./config:/app/config
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.mcp.rule=Host(`mcp.yourdomain.com`)"
@@ -301,9 +293,7 @@ services:
   workspace-secretary:
     image: ghcr.io/johnneerdael/google-workspace-secretary-mcp:latest
     volumes:
-      - ./config.yaml:/app/config/config.yaml:ro
-      - ./token.json:/app/config/token.json
-      - ./data:/app/data
+      - ./config:/app/config
 
 volumes:
   caddy_data:

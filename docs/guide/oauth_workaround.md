@@ -91,14 +91,16 @@ After authorizing, paste the redirect URL here: http://localhost:8080/callback?c
 
 ### 3. Configure Docker (if applicable)
 
-Mount your `token.json` into the container:
+Mount your config folder into the container:
 
 ```yaml
 volumes:
-  - ./config.yaml:/app/config/config.yaml:ro
-  - ./token.json:/app/config/token.json
   - ./config:/app/config
 ```
+
+Your `config/` folder should contain:
+- `config.yaml` - Configuration file
+- `token.json` - OAuth tokens (created by auth setup)
 
 ### Docker Auth Setup
 

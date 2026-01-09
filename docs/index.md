@@ -56,9 +56,7 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./config.yaml:/app/config/config.yaml:ro
-      - ./token.json:/app/config/token.json
-      - ./data:/app/data
+      - ./config:/app/config
     environment:
       - LOG_LEVEL=INFO
 ```

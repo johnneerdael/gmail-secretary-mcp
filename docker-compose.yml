@@ -12,6 +12,6 @@ services:
       - ./config:/app/config
       # Persist tasks if needed (optional if using external storage)
       - ./tasks.json:/app/tasks.json
-    command: uv run python -m workspace_secretary.server --transport http --host 0.0.0.0 --port 8000
+    command: ["--transport", "http", "--host", "0.0.0.0", "--port", "8000"]
     stdin_open: true
     tty: true

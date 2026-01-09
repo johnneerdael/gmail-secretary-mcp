@@ -5,6 +5,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0] - 2026-01-09
+
+### Changed
+- **Single Container Architecture**: Engine + MCP server now run via supervisord in one container
+  - Supervisor manages both processes internally
+  - Unix socket IPC between engine and MCP server
+  - Simplified deployment: one container instead of two
+- **Simplified Docker Compose**: Removed multi-container complexity
+- **Documentation**: Added `credentials.json` example format in getting-started guide
+
+### Fixed
+- Version synchronization across pyproject.toml, __init__.py, and docs
+
+## [3.0.0] - 2026-01-09
+
+### Added
+- **Dual-Process Architecture**: Complete separation of engine and MCP server
+  - `secretary-engine`: Persistent IMAP connection, background sync daemon
+  - `secretary-mcp`: Stateless MCP server exposing tools via HTTP
+- **Calendar Sync**: Full calendar synchronization with local SQLite cache
+- **Unix Socket IPC**: Engine exposes internal API for mutations
+- **Semantic Search**: Optional PostgreSQL + pgvector backend with embeddings
+- **Configurable Database**: SQLite (default) or PostgreSQL with pgvector
+
+### Changed
+- **Breaking**: Removed `OAuthMode` enum and `oauth_mode` config field - IMAP-only mode
+- **Breaking**: Removed `--mode` CLI flags from auth setup tools
+- Server always uses IMAP/SMTP protocols (API mode removed)
+
+### Removed
+- `API_MODE_SCOPES` and API mode code paths
+- `get_oauth_mode_from_context()` helper
+- `get_scopes_for_mode()` function
+- OAuth mode selection in browser_auth.py and gmail_auth.py
+
 ## [2.1.0] - 2026-01-09
 
 ### Changed

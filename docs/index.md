@@ -18,8 +18,8 @@ hero:
 
 features:
   - icon: ⚡
-    title: Local-First Architecture
-    details: v2.0 brings SQLite-backed instant reads. Email queries hit local cache instead of IMAP—sub-millisecond response times with background sync.
+    title: Single Container Architecture
+    details: v3.1 brings supervisor-managed processes. Engine + MCP server run together with Unix socket IPC—simple deployment, persistent IMAP connections.
     
   - icon: 🤖
     title: AI-Native Design
@@ -51,14 +51,16 @@ Install via Docker (recommended):
 services:
   workspace-secretary:
     image: ghcr.io/johnneerdael/google-workspace-secretary-mcp:latest
+    container_name: workspace-secretary
+    restart: always
     ports:
       - "8000:8000"
     volumes:
-      - ./config.yaml:/app/config.yaml:ro  # Read-only config
-      - ./token.json:/app/token.json       # Read-write tokens
-      - ./config:/app/config               # Cache databases
-    restart: always
-    command: ["--config", "/app/config.yaml", "--transport", "http", "--host", "0.0.0.0", "--port", "8000"]
+      - ./config.yaml:/app/config/config.yaml:ro
+      - ./token.json:/app/token.json
+      - ./data:/app/data
+    environment:
+      - LOG_LEVEL=INFO
 ```
 
 **Important**: Generate a unique bearer token for security:
@@ -71,7 +73,7 @@ uuidgen
 [guid]::NewGuid().ToString()
 ```
 
-Add to your `config/config.yaml`:
+Add to your `config.yaml`:
 
 ```yaml
 bearer_auth:
@@ -79,7 +81,7 @@ bearer_auth:
   token: "your-generated-uuid-here"
 ```
 
-Then start with: `docker-compose up -d`
+Then start with: `docker compose up -d`
 
 See [Getting Started](/getting-started) for complete installation instructions.
 
@@ -87,7 +89,8 @@ See [Getting Started](/getting-started) for complete installation instructions.
 
 Traditional email clients are built for humans. **Google Workspace Secretary MCP** is built for AI assistants.
 
-- **Instant reads**: SQLite cache means sub-millisecond email queries (v2.0)
+- **Instant reads**: SQLite cache means sub-millisecond email queries
+- **Persistent connections**: Engine maintains IMAP connection (no per-request reconnect)
 - **Token-efficient**: Bulk email fetching with smart truncation (700 chars) for fast triage
 - **Context-rich**: Full thread history, attachment content, and calendar context in one tool call
 - **Intelligence signals**: VIP detection, urgency markers, question detection—not hardcoded decisions
@@ -123,49 +126,74 @@ The AI:
 3. Parses and presents the total
 :::
 
+## What's New in v3.1.0
+
+**Single Container Architecture** — Simplified deployment with supervisor-managed processes:
+
+- 📦 **One Container**: Engine + MCP server run together via supervisord
+- 🔌 **Unix Socket IPC**: Internal communication between processes
+- ⚡ **Persistent IMAP**: Engine maintains connection (no per-request reconnect)
+- 🔄 **Background Sync**: Continuous incremental sync every 5 minutes
+- 📝 **Better Docs**: Added credentials.json example format
+
+## What's New in v3.0.0
+
+**Dual-Process Architecture** — Complete separation of concerns for reliability:
+
+- 🔄 **Engine + MCP Split**: Independent sync daemon + MCP server
+- 📅 **Calendar Sync**: Full calendar synchronization with local SQLite cache
+- 🧠 **Semantic Search**: Optional PostgreSQL + pgvector backend with embeddings
+- ⚡ **Database Options**: SQLite (default) or PostgreSQL with pgvector for AI features
+- 🚫 **IMAP-Only**: Removed deprecated API mode (`oauth_mode` config removed)
+
+### Database Options
+
+| Backend | When to Use | Features |
+|---------|-------------|----------|
+| **SQLite** (default) | Simple deployment, single user | FTS5 keyword search, WAL mode |
+| **PostgreSQL + pgvector** | AI features needed | Semantic search, embeddings, similarity matching |
+
+See the [Architecture Documentation](/architecture) for technical details.
+
 ## What's New in v2.2.0
 
 **RFC 5256 Threading Support** — Full conversation threading with automatic backfill:
 
-- 🧵 **Server-Side Threading**: Uses IMAP `THREAD` command (RFC 5256) when available for accurate parent/child relationships
-- 🔄 **Automatic Backfill**: Existing emails automatically get thread headers populated on first sync after upgrade
-- 📊 **Thread Data Model**: `in_reply_to`, `references`, `thread_root_uid`, `thread_parent_uid`, `thread_depth` stored in SQLite
-- ⚡ **Cache-First Threads**: `get_email_thread` and `summarize_thread` now query local cache instead of IMAP
-- 🔀 **Local Fallback**: Servers without THREAD support get local threading via References/In-Reply-To header analysis
+- 🧵 **Server-Side Threading**: Uses IMAP `THREAD` command (RFC 5256) when available
+- 🔄 **Automatic Backfill**: Existing emails get thread headers populated on first sync
+- 📊 **Thread Data Model**: `in_reply_to`, `references`, `thread_root_uid` stored in SQLite
+- ⚡ **Cache-First Threads**: `get_email_thread` queries local cache instead of IMAP
 
 See the [Threading Guide](/guide/threading) for details.
 
-## What's New in v2.1.0
+## Previous Releases
 
-**Documentation & Bug Fixes**:
+<details>
+<summary>v2.1.0 and earlier</summary>
 
+### v2.1.0
 - 📚 Comprehensive v2.0 documentation overhaul
 - 🔧 Fixed sync direction (newest-first for immediate usability)
 - 🐛 Cache update fixes for triage tools
 
-## What's New in v2.0.0
-
-**Local-First Architecture** — The server now operates like a proper email client (Thunderbird, Apple Mail):
-
-- ⚡ **SQLite Cache**: Email queries hit local database instead of IMAP—instant response times
-- 🔄 **Background Sync**: Continuous incremental sync keeps your cache fresh (every 5 minutes)
-- 💾 **Persistent Storage**: Cache survives restarts; only fetches new emails after initial sync
+### v2.0.0 - Local-First Architecture
+- ⚡ **SQLite Cache**: Email queries hit local database—instant response times
+- 🔄 **Background Sync**: Continuous incremental sync keeps cache fresh
+- 💾 **Persistent Storage**: Cache survives restarts
 - 📊 **RFC-Compliant**: Proper UIDVALIDITY/UIDNEXT tracking per RFC 3501/4549
 
-See the [Architecture Documentation](/architecture) for technical details.
+### v1.1.0
+- Third-party OAuth Support (Thunderbird/GNOME credentials)
+- SMTP with XOAUTH2
+- Calendar independent of email backend
 
-## What's New in v1.1.0
+### v0.2.0
+- Timezone-aware scheduling
+- Working hours constraints
+- Intelligent email signals
+- VIP sender detection
 
-- ✅ **Third-party OAuth Support** - Use Thunderbird/GNOME credentials
-- ✅ **SMTP with XOAUTH2** - Send emails via authenticated SMTP
-- ✅ **Calendar independent** - Google Calendar API works regardless of email backend
-
-## What's New in v0.2.0
-
-- ✅ **Timezone-aware scheduling** - All calendar operations use your configured timezone
-- ✅ **Working hours constraints** - Meeting suggestions respect your work schedule
-- ✅ **Intelligent email signals** - 5 ML-ready signals for AI-driven prioritization
-- ✅ **VIP sender detection** - Configurable list of priority email addresses
+</details>
 
 [See Migration Guide](/guide/configuration#migration-from-v01x) for upgrading from earlier versions.
 

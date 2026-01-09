@@ -190,7 +190,7 @@ async def try_enroll() -> bool:
             return False
 
         # Initialize database using factory (respects config.database.backend)
-        state.database = create_database(state.config)
+        state.database = create_database(state.config.database)
         logger.info(f"Database initialized: {type(state.database).__name__}")
 
         # Connect IMAP

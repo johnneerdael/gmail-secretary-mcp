@@ -124,6 +124,15 @@ The AI:
 3. Parses and presents the total
 :::
 
+## What's New in v4.2.6
+
+**Resumable Sync & Stability Fixes**:
+
+- 🔄 **Resume on Restart**: Sync picks up where it left off using stored `uidnext`
+- 📡 **IDLE Starts Immediately**: Real-time email detection even during initial sync
+- 🛡️ **Embeddings Stability**: Filters invalid texts, prevents 400 errors from empty emails
+- 📊 **Accurate Progress**: Shows "Resuming (16000/26000 done, 10000 remaining)"
+
 ## What's New in v4.2.5
 
 **Lockstep Sync+Embed Architecture** — Fixes critical race conditions:

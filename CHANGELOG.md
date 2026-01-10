@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.2.6] - 2026-01-10
+
+### Fixed
+
+- **Resume Sync on Restart**: Sync now resumes from stored `uidnext` instead of starting over
+  - Shows accurate progress: "Resuming (16000/26000 done, 10000 remaining)"
+  - Skips folders that are already fully synced
+- **IDLE Starts Immediately**: No longer waits for initial sync to complete
+  - IDLE runs in dedicated thread, independent from sync executor
+  - New emails detected in real-time even during initial sync
+- **Empty Text Filtering for Embeddings**: Prevents 400 Bad Request errors
+  - Requires minimum 3 characters and at least one alphanumeric character
+  - Skips emails with empty/invalid body content
+  - Better error logging with response body on API errors
+
 ## [4.2.5] - 2026-01-10
 
 ### Changed

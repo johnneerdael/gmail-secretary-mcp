@@ -16,11 +16,11 @@ WORKDIR /app
 
 COPY pyproject.toml uv.lock ./
 
-RUN uv sync --frozen --no-dev --no-install-project --extra postgres
+RUN uv sync --frozen --no-dev --no-install-project --extra postgres --extra cohere
 
 COPY . .
 
-RUN uv sync --frozen --no-dev --extra postgres
+RUN uv sync --frozen --no-dev --extra postgres --extra cohere
 
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 

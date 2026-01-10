@@ -159,40 +159,59 @@ class EmbeddingsClient:
         return results
 
     async def _embed_batch(self, texts: list[str]) -> list[EmbeddingResult]:
-        content_hashes = [self._compute_hash(t) for t in texts]
+        filtered_texts = [t for t in texts if t and t.strip()]
+        if not filtered_texts:
+            return [
+                EmbeddingResult(
+                    text=t,
+                    embedding=[],
+                    model=self.model,
+                    content_hash="",
+                    tokens_used=0,
+                )
+                for t in texts
+            ]
+
+        content_hashes = [self._compute_hash(t) for t in filtered_texts]
 
         payload = {
             "model": self.model,
-            "input": texts,
+            "input": filtered_texts,
         }
 
         if self.dimensions and self.dimensions != 1536:
             payload["dimensions"] = self.dimensions
 
         logger.debug(
-            f"Requesting embeddings for {len(texts)} texts from {self.embeddings_url}"
+            f"Requesting embeddings for {len(filtered_texts)} texts from {self.embeddings_url}"
         )
 
-        async with self._get_semaphore():
-            client = await self._get_client()
-            response = await client.post(
-                self.embeddings_url,
-                headers=self._get_headers(),
-                json=payload,
+        try:
+            async with self._get_semaphore():
+                client = await self._get_client()
+                response = await client.post(
+                    self.embeddings_url,
+                    headers=self._get_headers(),
+                    json=payload,
+                )
+                response.raise_for_status()
+                data = response.json()
+        except httpx.HTTPStatusError as e:
+            logger.error(
+                f"Embeddings API error {e.response.status_code}: {e.response.text[:500]}"
             )
-            response.raise_for_status()
-            data = response.json()
+            raise
 
         logger.debug(
             f"Received embeddings response with {len(data.get('data', []))} vectors"
         )
 
-        # Parse response
+        # Parse response - map back to filtered_texts
         results = []
         embeddings_data = data.get("data", [])
         usage = data.get("usage", {})
         total_tokens = usage.get("total_tokens", 0)
-        tokens_per_text = total_tokens // len(texts) if texts else 0
+        tokens_per_text = total_tokens // len(filtered_texts) if filtered_texts else 0
 
         # Sort by index to maintain order
         embeddings_data.sort(key=lambda x: x.get("index", 0))
@@ -201,7 +220,7 @@ class EmbeddingsClient:
             embedding = embedding_item.get("embedding", [])
             results.append(
                 EmbeddingResult(
-                    text=texts[i],
+                    text=filtered_texts[i],
                     embedding=embedding,
                     model=self.model,
                     content_hash=content_hashes[i],

@@ -589,23 +589,22 @@ def _sync_single_folder(client: ImapClient, folder: str) -> int:
         new_uids = [uid for uid in uids if uid >= stored_uidnext]
 
         total_synced = 0
+        total_to_sync = len(new_uids) if new_uids else 0
+
         if new_uids:
             new_uids_desc = sorted(new_uids, reverse=True)
+            logger.info(f"[{folder}] Starting sync of {total_to_sync} emails")
 
-            for i in range(0, len(new_uids_desc), 500):
-                batch = new_uids_desc[i : i + 500]
-                emails = client.fetch_emails(batch, folder, limit=500)
+            for i in range(0, len(new_uids_desc), 50):
+                batch = new_uids_desc[i : i + 50]
+                emails = client.fetch_emails(batch, folder, limit=50)
                 for uid, email_obj in emails.items():
                     params = _email_to_db_params(email_obj, folder)
                     state.database.upsert_email(**params)
                 total_synced += len(emails)
-                if len(new_uids_desc) > 500:
-                    logger.info(
-                        f"Synced {total_synced}/{len(new_uids_desc)} emails from {folder}"
-                    )
+                logger.info(f"[{folder}] {total_synced}/{total_to_sync} emails synced")
 
             max_uid = max(new_uids)
-            logger.info(f"Synced {total_synced} new emails from {folder}")
         else:
             max_uid = stored_uidnext - 1
 

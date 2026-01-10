@@ -442,6 +442,10 @@ async def sync_loop():
     )  # 30 min default
     logger.info("Sync loop started")
 
+    if state.idle_client and state.idle_client.has_idle_capability():
+        logger.info("Starting IDLE monitor for push notifications")
+        state.idle_task = asyncio.create_task(idle_monitor())
+
     initial_sync_done = False
 
     while state.running:
@@ -452,10 +456,6 @@ async def sync_loop():
                     await initial_lockstep_sync_and_embed()
                     initial_sync_done = True
 
-                    if state.idle_client and state.idle_client.has_idle_capability():
-                        logger.info("Starting IDLE monitor for push notifications")
-                        state.idle_task = asyncio.create_task(idle_monitor())
-
                     if state.database.supports_embeddings():
                         logger.info(
                             "Starting embeddings background task for steady-state"
@@ -463,7 +463,7 @@ async def sync_loop():
                         state.embeddings_task = asyncio.create_task(embeddings_loop())
 
                     logger.info(
-                        f"Initial sync complete. IDLE active for INBOX, catch-up every {catchup_interval}s"
+                        f"Initial sync complete. Catch-up every {catchup_interval}s"
                     )
                 else:
                     logger.debug("Running periodic catch-up sync...")

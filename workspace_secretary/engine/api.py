@@ -433,20 +433,14 @@ async def embeddings_loop():
 async def sync_loop():
     """Background sync loop for email and calendar.
 
-    - Initial sync: parallel folder sync for all folders
-    - After initial: IDLE handles INBOX push, periodic sync (30 min) catches non-INBOX folders and missed updates
+    - Initial sync: lockstep batch sync+embed (50 emails at a time)
+    - After initial: IDLE handles INBOX push, periodic sync catches missed updates
+    - Embeddings loop starts after initial sync for steady-state
     """
     catchup_interval = int(
         os.environ.get("SYNC_CATCHUP_INTERVAL", "1800")
     )  # 30 min default
     logger.info("Sync loop started")
-
-    if state.idle_client and state.idle_client.has_idle_capability():
-        state.idle_task = asyncio.create_task(idle_monitor())
-
-    if state.database and state.database.supports_embeddings():
-        logger.info("Starting embeddings background task")
-        state.embeddings_task = asyncio.create_task(embeddings_loop())
 
     initial_sync_done = False
 
@@ -454,9 +448,20 @@ async def sync_loop():
         try:
             if state.database and state.config:
                 if not initial_sync_done:
-                    logger.info("Running initial parallel sync...")
-                    await sync_emails_parallel()
+                    logger.info("Running initial lockstep sync+embed...")
+                    await initial_lockstep_sync_and_embed()
                     initial_sync_done = True
+
+                    if state.idle_client and state.idle_client.has_idle_capability():
+                        logger.info("Starting IDLE monitor for push notifications")
+                        state.idle_task = asyncio.create_task(idle_monitor())
+
+                    if state.database.supports_embeddings():
+                        logger.info(
+                            "Starting embeddings background task for steady-state"
+                        )
+                        state.embeddings_task = asyncio.create_task(embeddings_loop())
+
                     logger.info(
                         f"Initial sync complete. IDLE active for INBOX, catch-up every {catchup_interval}s"
                     )
@@ -630,6 +635,67 @@ def _sync_single_folder(client: ImapClient, folder: str) -> int:
         return 0
 
 
+def _sync_next_batch(
+    client: ImapClient, folder: str, batch_size: int = 50
+) -> list[int]:
+    """Sync exactly next batch_size emails for folder.
+
+    Returns the list of UIDs actually synced (for lockstep embedding).
+    """
+    if not state.database or not state.config:
+        return []
+
+    try:
+        folder_state = state.database.get_folder_state(folder)
+        folder_info = client.select_folder(folder, readonly=True)
+
+        current_uidvalidity = folder_info.get("uidvalidity", 0)
+        current_highestmodseq = folder_info.get("highestmodseq", 0)
+
+        stored_uidvalidity = folder_state.get("uidvalidity", 0) if folder_state else 0
+        stored_uidnext = folder_state.get("uidnext", 1) if folder_state else 1
+
+        if stored_uidvalidity != current_uidvalidity and stored_uidvalidity != 0:
+            logger.warning(f"UIDVALIDITY changed for {folder}, clearing cache")
+            state.database.clear_folder(folder)
+            stored_uidnext = 1
+
+        uids = client.search(f"UID {stored_uidnext}:*", folder=folder)
+        new_uids = sorted([uid for uid in uids if uid >= stored_uidnext], reverse=True)
+
+        if not new_uids:
+            state.database.save_folder_state(
+                folder=folder,
+                uidvalidity=current_uidvalidity,
+                uidnext=stored_uidnext,
+                highestmodseq=current_highestmodseq,
+            )
+            return []
+
+        batch_uids = new_uids[:batch_size]
+        emails = client.fetch_emails(batch_uids, folder, limit=batch_size)
+
+        synced_uids: list[int] = []
+        for uid, email_obj in emails.items():
+            params = _email_to_db_params(email_obj, folder)
+            state.database.upsert_email(**params)
+            synced_uids.append(uid)
+
+        max_synced_uid = max(synced_uids) if synced_uids else stored_uidnext - 1
+        state.database.save_folder_state(
+            folder=folder,
+            uidvalidity=current_uidvalidity,
+            uidnext=max_synced_uid + 1,
+            highestmodseq=current_highestmodseq,
+        )
+
+        return synced_uids
+
+    except Exception as e:
+        logger.error(f"Error in batch sync for {folder}: {e}")
+        return []
+
+
 async def sync_emails_parallel():
     """Sync all folders in parallel using the connection pool."""
     if not state.database or not state.config:
@@ -762,6 +828,118 @@ async def generate_embeddings() -> int:
     except Exception as e:
         logger.error(f"Embedding generation error: {e}")
         raise
+
+
+async def embed_specific_uids(folder: str, uids: list[int]) -> int:
+    """Embed exactly the specified UIDs. Used for lockstep sync+embed."""
+    if not uids or not state.database or not state.database.supports_embeddings():
+        return 0
+
+    if not state.config or not state.config.database.embeddings:
+        return 0
+
+    embeddings_config = state.config.database.embeddings
+    if not embeddings_config.enabled:
+        return 0
+
+    try:
+        from workspace_secretary.engine.embeddings import create_embeddings_client
+
+        client = create_embeddings_client(embeddings_config)
+        if not client:
+            return 0
+
+        emails = state.database.get_emails_by_uids(uids, folder)
+        if not emails:
+            return 0
+
+        results = await client.embed_emails(emails)
+
+        stored = 0
+        for email, result in zip(emails, results):
+            if result.embedding:
+                state.database.upsert_embedding(
+                    email_uid=email["uid"],
+                    email_folder=folder,
+                    embedding=result.embedding,
+                    model=result.model,
+                    content_hash=result.content_hash,
+                )
+                stored += 1
+
+        await client.close()
+        return stored
+
+    except Exception as e:
+        logger.error(f"Embed specific UIDs error: {e}")
+        return 0
+
+
+async def initial_lockstep_sync_and_embed():
+    """Initial sync: sync batch → embed batch → repeat until done."""
+    if not state.database or not state.config:
+        return
+
+    folders = state.config.allowed_folders or ["INBOX"]
+    loop = asyncio.get_running_loop()
+    batch_size = 50
+    supports_embeddings = state.database.supports_embeddings()
+
+    if state._pool_init_lock is None:
+        state._pool_init_lock = asyncio.Lock()
+
+    if state._imap_pool_size == 0:
+        async with state._pool_init_lock:
+            if state._imap_pool_size == 0:
+                logger.info("Initializing IMAP connection pool for lockstep sync...")
+                await loop.run_in_executor(None, _init_connection_pool)
+
+    if state._imap_pool_size == 0:
+        logger.error("No IMAP connections available for lockstep sync")
+        return
+
+    total_synced = 0
+    total_embedded = 0
+
+    for folder in folders:
+        logger.info(f"[{folder}] Starting lockstep sync+embed...")
+        folder_synced = 0
+        folder_embedded = 0
+
+        while state.running:
+
+            def _sync_batch():
+                try:
+                    client = state._imap_pool.get(timeout=60)
+                except Empty:
+                    return []
+                try:
+                    return _sync_next_batch(client, folder, batch_size)
+                finally:
+                    state._imap_pool.put(client)
+
+            synced_uids = await loop.run_in_executor(state._sync_executor, _sync_batch)
+
+            if not synced_uids:
+                break
+
+            folder_synced += len(synced_uids)
+            logger.info(f"[{folder}] Synced {folder_synced} emails...")
+
+            if supports_embeddings:
+                embedded = await embed_specific_uids(folder, synced_uids)
+                folder_embedded += embedded
+                logger.info(f"[{folder}] Embedded {folder_embedded} emails...")
+
+        total_synced += folder_synced
+        total_embedded += folder_embedded
+        logger.info(
+            f"[{folder}] Complete: {folder_synced} synced, {folder_embedded} embedded"
+        )
+
+    logger.info(
+        f"Lockstep sync complete: {total_synced} synced, {total_embedded} embedded across {len(folders)} folders"
+    )
 
 
 def _idle_worker(

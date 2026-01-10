@@ -1,6 +1,6 @@
 # Gmail Secretary
 
-[![Version](https://img.shields.io/badge/version-4.3.0-blue.svg)](https://github.com/johnneerdael/Google-Workspace-Secretary-MCP/releases)
+[![Version](https://img.shields.io/badge/version-4.3.0-blue.svg)](https://github.com/johnneerdael/gmail-secretary-map/releases)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![RFC Compliant](https://img.shields.io/badge/RFC-IMAP4rev1%20%7C%20CONDSTORE%20%7C%20IDLE-green.svg)](#-rfc-compliance)
 
@@ -8,7 +8,7 @@
 
 Built for LLMs that need to read, search, triage, and respond to email autonomously. Not just an MCP wrapper — a full-featured IMAP client engineered for AI orchestration workflows.
 
-[📚 **Documentation**](https://johnneerdael.github.io/Google-Workspace-Secretary-MCP/) · [🏗️ **Architecture**](#-architecture) · [⚡ **Quick Start**](#-quick-start)
+[📚 **Documentation**](https://johnneerdael.github.io/gmail-secretary-map/) · [🏗️ **Architecture**](#-architecture) · [⚡ **Quick Start**](#-quick-start)
 
 ---
 
@@ -191,8 +191,8 @@ Bulk operations require approval with confidence tiers:
 ### 1. Clone and Configure
 
 ```bash
-git clone https://github.com/johnneerdael/Google-Workspace-Secretary-MCP.git
-cd Google-Workspace-Secretary-MCP
+git clone https://github.com/johnneerdael/gmail-secretary-map.git
+cd gmail-secretary-map
 cp config.sample.yaml config/config.yaml
 ```
 
@@ -354,10 +354,10 @@ CREATE TABLE folder_state (
 
 | Guide | Description |
 |-------|-------------|
-| [Architecture](https://johnneerdael.github.io/Google-Workspace-Secretary-MCP/architecture.html) | Deep dive into dual-process design |
-| [Configuration](https://johnneerdael.github.io/Google-Workspace-Secretary-MCP/guide/configuration.html) | All config options explained |
-| [Agent Rules](https://johnneerdael.github.io/Google-Workspace-Secretary-MCP/guide/agents.html) | HITL safety patterns |
-| [API Reference](https://johnneerdael.github.io/Google-Workspace-Secretary-MCP/api/) | Complete tool documentation |
+| [Architecture](https://johnneerdael.github.io/gmail-secretary-map/architecture.html) | Deep dive into dual-process design |
+| [Configuration](https://johnneerdael.github.io/gmail-secretary-map/guide/configuration.html) | All config options explained |
+| [Agent Rules](https://johnneerdael.github.io/gmail-secretary-map/guide/agents.html) | HITL safety patterns |
+| [API Reference](https://johnneerdael.github.io/gmail-secretary-map/api/) | Complete tool documentation |
 
 ---
 
@@ -385,7 +385,7 @@ MIT License — see [LICENSE](LICENSE) for details.
 
 <p align="center">
   <strong>Built for AI agents that take email seriously.</strong><br>
-  <a href="https://github.com/johnneerdael/Google-Workspace-Secretary-MCP">GitHub</a> ·
-  <a href="https://johnneerdael.github.io/Google-Workspace-Secretary-MCP/">Documentation</a> ·
+  <a href="https://github.com/johnneerdael/gmail-secretary-map">GitHub</a> ·
+  <a href="https://johnneerdael.github.io/gmail-secretary-map/">Documentation</a> ·
   <a href="https://modelcontextprotocol.io/">Model Context Protocol</a>
 </p>

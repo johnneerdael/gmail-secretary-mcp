@@ -477,7 +477,7 @@ This release fundamentally changes how the system works internally. The Engine n
 
 ### Fixed
 - Multi-architecture Docker builds now support both `linux/amd64` and `linux/arm64`
-- Container registry URL corrected to `ghcr.io/johnneerdael/google-workspace-secretary-mcp`
+- Container registry URL corrected to `ghcr.io/johnneerdael/gmail-secretary-map`
 
 ### Added
 - Manual OAuth flow (`--manual` flag) for Docker and headless environments

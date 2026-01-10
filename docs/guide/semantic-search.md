@@ -55,7 +55,7 @@ services:
       retries: 5
 
   workspace-secretary:
-    image: ghcr.io/johnneerdael/google-workspace-secretary-mcp:latest
+    image: ghcr.io/johnneerdael/gmail-secretary-map:latest
     depends_on:
       postgres:
         condition: service_healthy

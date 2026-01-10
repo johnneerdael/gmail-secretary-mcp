@@ -19,7 +19,7 @@ This document provides a complete, copy/paste-ready guide for setting up the **G
 The OpenCode agent setup consists of:
 
 ```
-Google-Workspace-Secretary-MCP/
+gmail-secretary-map/
 ├── AGENTS.md                          # Hard rules (HITL, confidence gating, etc.)
 ├── .opencode/
 │   ├── agent/

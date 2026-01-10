@@ -26,7 +26,7 @@ Gmail Secretary includes a full-featured web interface for managing your inbox w
 # docker-compose.yml
 services:
   workspace-secretary:
-    image: ghcr.io/johnneerdael/google-workspace-secretary-mcp:latest
+    image: ghcr.io/johnneerdael/gmail-secretary-map:latest
     ports:
       - "5000:5000"
     volumes:
@@ -266,7 +266,7 @@ WEB_DEBUG=false
 ```yaml
 services:
   workspace-secretary:
-    image: ghcr.io/johnneerdael/google-workspace-secretary-mcp:latest
+    image: ghcr.io/johnneerdael/gmail-secretary-map:latest
     ports:
       - "5000:5000"
     volumes:

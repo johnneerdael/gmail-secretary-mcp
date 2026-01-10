@@ -139,4 +139,4 @@ See [Configuration](./configuration) for complete reference.
 
 ---
 
-**Questions?** Check [Use Cases](./use-cases) or [open an issue](https://github.com/johnneerdael/Google-Workspace-Secretary-MCP/issues).
+**Questions?** Check [Use Cases](./use-cases) or [open an issue](https://github.com/johnneerdael/gmail-secretary-map/issues).

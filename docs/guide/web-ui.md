@@ -185,7 +185,7 @@ The standard Docker image includes the web UI:
 ```yaml
 services:
   workspace-secretary:
-    image: ghcr.io/johnneerdael/google-workspace-secretary-mcp:latest
+    image: ghcr.io/johnneerdael/gmail-secretary-map:latest
     ports:
       - "5000:5000"
     volumes:

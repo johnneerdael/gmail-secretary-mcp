@@ -271,7 +271,7 @@ All fields can be overridden via environment variables:
 # docker-compose.yml
 services:
   workspace-secretary:
-    image: ghcr.io/johnneerdael/google-workspace-secretary-mcp:latest
+    image: ghcr.io/johnneerdael/gmail-secretary-map:latest
     environment:
       - WORKSPACE_TIMEZONE=America/Los_Angeles
       - WORKING_HOURS_START=09:00

@@ -1,4 +1,4 @@
-# Agentic Framework: Building AI Secretaries with Google Workspace MCP
+# Agentic Framework: Building AI Secretaries with GMail Secretary MCP
 
 The Gmail Secretary MCP is designed to be consumed by Large Language Models (LLMs) acting as autonomous or semi-autonomous agents. This document defines the patterns for building safe, effective AI assistants with proper safeguards.
 

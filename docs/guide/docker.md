@@ -13,8 +13,8 @@ Deploy Gmail Secretary MCP with Docker for persistent email caching and reliable
 **1. Clone and configure:**
 
 ```bash
-git clone https://github.com/johnneerdael/Google-Workspace-Secretary-MCP.git
-cd Google-Workspace-Secretary-MCP
+git clone https://github.com/johnneerdael/gmail-secretary-map.git
+cd gmail-secretary-map
 
 # Create config directory
 mkdir -p config
@@ -118,7 +118,7 @@ database:
 # docker-compose.yml
 services:
   workspace-secretary:
-    image: ghcr.io/johnneerdael/google-workspace-secretary-mcp:latest
+    image: ghcr.io/johnneerdael/gmail-secretary-map:latest
     ports:
       - "8000:8000"
     volumes:

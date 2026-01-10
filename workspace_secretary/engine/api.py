@@ -415,17 +415,19 @@ async def embeddings_loop():
 async def sync_loop():
     """Background sync loop for email and calendar."""
     sync_interval = int(os.environ.get("SYNC_INTERVAL", "300"))
+    logger.info(f"Sync loop started, interval={sync_interval}s")
 
     if state.idle_client and state.idle_client.has_idle_capability():
         state.idle_task = asyncio.create_task(idle_monitor())
 
     if state.database and state.database.supports_embeddings():
+        logger.info("Starting embeddings background task")
         state.embeddings_task = asyncio.create_task(embeddings_loop())
 
     while state.running:
         try:
             if state.database and state.imap_client:
-                logger.debug("Running email sync...")
+                logger.info("Running email sync...")
                 await sync_emails()
 
         except Exception as e:

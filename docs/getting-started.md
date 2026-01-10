@@ -100,7 +100,7 @@ The container runs both the **MCP Server** and **Engine** internally via supervi
 # docker-compose.yml
 services:
   workspace-secretary:
-    image: ghcr.io/johnneerdael/google-workspace-secretary-mcp:latest
+    image: ghcr.io/johnneerdael/gmail-secretary-map:latest
     container_name: workspace-secretary
     restart: always
     ports:
@@ -221,7 +221,7 @@ The manual OAuth flow works with any redirect URI, including `http://localhost`.
 ```yaml
 services:
   workspace-secretary:
-    image: ghcr.io/johnneerdael/google-workspace-secretary-mcp:latest
+    image: ghcr.io/johnneerdael/gmail-secretary-map:latest
     volumes:
       - ./config:/app/config
     labels:
@@ -244,7 +244,7 @@ services:
       - caddy_data:/data
 
   workspace-secretary:
-    image: ghcr.io/johnneerdael/google-workspace-secretary-mcp:latest
+    image: ghcr.io/johnneerdael/gmail-secretary-map:latest
     volumes:
       - ./config:/app/config
 
@@ -379,4 +379,4 @@ docker compose logs workspace-secretary
 
 ---
 
-**Need help?** [Open an issue on GitHub](https://github.com/johnneerdael/Google-Workspace-Secretary-MCP/issues)
+**Need help?** [Open an issue on GitHub](https://github.com/johnneerdael/gmail-secretary-map/issues)

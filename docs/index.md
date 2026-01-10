@@ -14,7 +14,7 @@ hero:
       link: /getting-started
     - theme: alt
       text: View on GitHub
-      link: https://github.com/johnneerdael/Google-Workspace-Secretary-MCP
+      link: https://github.com/johnneerdael/gmail-secretary-map
 
 features:
   - icon: 📡
@@ -50,7 +50,7 @@ Install via Docker (recommended):
 # docker-compose.yml
 services:
   workspace-secretary:
-    image: ghcr.io/johnneerdael/google-workspace-secretary-mcp:latest
+    image: ghcr.io/johnneerdael/gmail-secretary-map:latest
     container_name: workspace-secretary
     restart: always
     ports:
@@ -378,9 +378,9 @@ See the [Threading Guide](/guide/threading) for details.
 
 ## Community & Support
 
-- [GitHub Repository](https://github.com/johnneerdael/Google-Workspace-Secretary-MCP)
-- [Report Issues](https://github.com/johnneerdael/Google-Workspace-Secretary-MCP/issues)
-- [View Releases](https://github.com/johnneerdael/Google-Workspace-Secretary-MCP/releases)
+- [GitHub Repository](https://github.com/johnneerdael/gmail-secretary-map)
+- [Report Issues](https://github.com/johnneerdael/gmail-secretary-map/issues)
+- [View Releases](https://github.com/johnneerdael/gmail-secretary-map/releases)
 
 ---
 

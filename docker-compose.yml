@@ -1,6 +1,6 @@
 services:
   workspace-secretary:
-    image: ghcr.io/johnneerdael/google-workspace-secretary-mcp:latest
+    image: ghcr.io/johnneerdael/gmail-secretary-map:latest
     container_name: workspace-secretary
     restart: unless-stopped
     ports:

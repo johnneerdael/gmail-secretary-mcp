@@ -620,7 +620,7 @@ class GeminiEmbeddingsClient:
         self,
         api_key: str,
         model: str = "gemini-embedding-001",
-        dimensions: int = 768,
+        dimensions: int = 3072,
         batch_size: int = 100,
         task_type: str = "RETRIEVAL_DOCUMENT",
         max_chars: int = 500000,
@@ -937,11 +937,14 @@ def create_embeddings_client(
             if not api_key:
                 logger.warning("Gemini embeddings enabled but no api_key configured")
                 return None
+            # Prefer gemini_model if explicitly set, otherwise use generic model
+            gem_model = getattr(cfg, "gemini_model", None)
+            if not gem_model or gem_model == "text-embedding-004":
+                # Use generic model if gemini_model wasn't explicitly configured
+                gem_model = getattr(cfg, "model", None) or "gemini-embedding-001"
             return GeminiEmbeddingsClient(
                 api_key=api_key,
-                model=getattr(cfg, "gemini_model", cfg.model)
-                if hasattr(cfg, "gemini_model")
-                else cfg.model,
+                model=gem_model,
                 dimensions=cfg.dimensions,
                 batch_size=cfg.batch_size,
                 task_type=getattr(cfg, "task_type", "RETRIEVAL_DOCUMENT"),

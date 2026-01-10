@@ -71,8 +71,8 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/johnneerdael/Google-Workspace-Secretary-MCP"
-Issues = "https://github.com/johnneerdael/Google-Workspace-Secretary-MCP/issues"
+Homepage = "https://github.com/johnneerdael/gmail-secretary-map"
+Issues = "https://github.com/johnneerdael/gmail-secretary-map/issues"
 
 [tool.setuptools]
 packages = ["workspace_secretary"]

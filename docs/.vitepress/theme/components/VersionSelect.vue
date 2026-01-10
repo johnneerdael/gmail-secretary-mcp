@@ -31,7 +31,7 @@ const versions = ref<Version[]>([])
 onMounted(async () => {
   try {
     // Fetch versions.json from the root of the site
-    const base = '/Google-Workspace-Secretary-MCP/'
+    const base = '/gmail-secretary-map/'
     const response = await fetch(`${base}versions.json`)
     const data: VersionsData = await response.json()
     
@@ -66,7 +66,7 @@ function switchVersion() {
   const pagePath = match ? match[2] : ''
   
   // Construct new URL with selected version
-  const base = '/Google-Workspace-Secretary-MCP'
+  const base = '/gmail-secretary-map'
   const newPath = `${base}${selectedVersion.value}${pagePath}`
   
   // Navigate to the new version, fallback to version root if page doesn't exist

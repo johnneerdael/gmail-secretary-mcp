@@ -56,6 +56,9 @@ cohere = [
 gemini = [
     "google-genai>=1.0.0",
 ]
+openai = [
+    "openai>=1.0.0",
+]
 dev = [
     "pytest>=7.0.0",
     "pytest-cov>=3.0.0",

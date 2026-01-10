@@ -1,40 +1,150 @@
 """
-Database dependency for web routes.
-
-Provides access to the shared PostgreSQL database used by the engine.
-Reads configuration from the same config.yaml as the MCP server.
+Direct PostgreSQL connection for web UI - read-only access.
 """
 
-from typing import Annotated, Optional, Any
-from fastapi import Depends
+from typing import Optional
+from contextlib import contextmanager
 import logging
+import psycopg_pool
+from psycopg.rows import dict_row
 
 logger = logging.getLogger(__name__)
 
-_db_instance: Optional[Any] = None
+_pool = None
 
 
-def get_database():
-    """Get or create database instance from config.yaml."""
-    global _db_instance
+def get_pool():
+    global _pool
+    if _pool is None:
+        from workspace_secretary.config import load_config
 
-    if _db_instance is not None:
-        return _db_instance
+        config = load_config()
+        db = config.database.postgres
 
-    from workspace_secretary.config import load_config
-    from workspace_secretary.engine.database import create_database
-
-    config = load_config()
-    _db_instance = create_database(config)
-    _db_instance.initialize()
-
-    logger.info(f"Web UI database initialized: {config.database.backend.value}")
-    return _db_instance
+        conninfo = f"host={db.host} port={db.port} dbname={db.database} user={db.user} password={db.password}"
+        _pool = psycopg_pool.ConnectionPool(conninfo, min_size=1, max_size=5)
+        logger.info("Web UI database pool initialized")
+    return _pool
 
 
-def get_db():
-    """FastAPI dependency for database access."""
-    return get_database()
+@contextmanager
+def get_conn():
+    pool = get_pool()
+    with pool.connection() as conn:
+        yield conn
 
 
-DatabaseDep = Annotated[Any, Depends(get_db)]
+def get_inbox_emails(
+    folder: str, limit: int, offset: int, unread_only: bool = False
+) -> list[dict]:
+    sql = """
+        SELECT uid, folder, from_addr, subject, 
+               LEFT(body_text, 200) as preview, date, is_unread, has_attachments
+        FROM emails 
+        WHERE folder = %s {unread_filter}
+        ORDER BY date DESC 
+        LIMIT %s OFFSET %s
+    """
+    unread_filter = "AND is_unread = true" if unread_only else ""
+    sql = sql.format(unread_filter=unread_filter)
+
+    with get_conn() as conn:
+        with conn.cursor(row_factory=dict_row) as cur:
+            cur.execute(sql, (folder, limit, offset))
+            return cur.fetchall()
+
+
+def get_email(uid: int, folder: str) -> Optional[dict]:
+    with get_conn() as conn:
+        with conn.cursor(row_factory=dict_row) as cur:
+            cur.execute(
+                "SELECT * FROM emails WHERE uid = %s AND folder = %s", (uid, folder)
+            )
+            return cur.fetchone()
+
+
+def get_thread(uid: int, folder: str) -> list[dict]:
+    with get_conn() as conn:
+        with conn.cursor(row_factory=dict_row) as cur:
+            cur.execute(
+                "SELECT message_id, in_reply_to, refs FROM emails WHERE uid = %s AND folder = %s",
+                (uid, folder),
+            )
+            row = cur.fetchone()
+            if not row:
+                return []
+
+            message_id = row["message_id"]
+            in_reply_to = row["in_reply_to"]
+            refs = row["refs"] or []
+
+            thread_ids = set(refs + [message_id, in_reply_to])
+            thread_ids.discard(None)
+            thread_ids.discard("")
+
+            if not thread_ids:
+                cur.execute(
+                    "SELECT * FROM emails WHERE uid = %s AND folder = %s", (uid, folder)
+                )
+                single = cur.fetchone()
+                return [single] if single else []
+
+            placeholders = ",".join(["%s"] * len(thread_ids))
+            cur.execute(
+                f"""
+                SELECT * FROM emails 
+                WHERE message_id = ANY(%s) OR in_reply_to = ANY(%s)
+                ORDER BY date ASC
+            """,
+                (list(thread_ids), list(thread_ids)),
+            )
+            return cur.fetchall()
+
+
+def search_emails(query: str, folder: str, limit: int) -> list[dict]:
+    with get_conn() as conn:
+        with conn.cursor(row_factory=dict_row) as cur:
+            cur.execute(
+                """
+                SELECT uid, folder, from_addr, subject, 
+                       LEFT(body_text, 200) as preview, date, is_unread
+                FROM emails 
+                WHERE folder = %s AND (
+                    to_tsvector('english', COALESCE(subject, '') || ' ' || COALESCE(body_text, '')) 
+                    @@ plainto_tsquery('english', %s)
+                )
+                ORDER BY date DESC LIMIT %s
+            """,
+                (folder, query, limit),
+            )
+            return cur.fetchall()
+
+
+def semantic_search(
+    query_embedding: list[float], folder: str, limit: int, threshold: float = 0.5
+) -> list[dict]:
+    with get_conn() as conn:
+        with conn.cursor(row_factory=dict_row) as cur:
+            cur.execute(
+                """
+                SELECT e.uid, e.folder, e.from_addr, e.subject, 
+                       LEFT(e.body_text, 200) as preview, e.date, e.is_unread,
+                       1 - (emb.embedding <=> %s::vector) as similarity
+                FROM email_embeddings emb
+                JOIN emails e ON e.uid = emb.uid AND e.folder = emb.folder
+                WHERE e.folder = %s AND 1 - (emb.embedding <=> %s::vector) > %s
+                ORDER BY similarity DESC LIMIT %s
+            """,
+                (query_embedding, folder, query_embedding, threshold, limit),
+            )
+            return cur.fetchall()
+
+
+def has_embeddings() -> bool:
+    try:
+        with get_conn() as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT 1 FROM email_embeddings LIMIT 1")
+                return cur.fetchone() is not None
+    except Exception:
+        return False

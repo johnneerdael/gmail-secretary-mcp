@@ -1,8 +1,4 @@
-"""
-Search routes - keyword and semantic search.
-"""
-
-from fastapi import APIRouter, Request, Query, HTTPException
+from fastapi import APIRouter, Request, Query
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
@@ -12,14 +8,13 @@ import html
 import os
 import httpx
 
-from workspace_secretary.web.database import get_db
+from workspace_secretary.web import database as db
 
 router = APIRouter()
 templates = Jinja2Templates(directory=str(Path(__file__).parent.parent / "templates"))
 
 
 def format_date(date_val) -> str:
-    """Format date for display."""
     if not date_val:
         return ""
     if isinstance(date_val, str):
@@ -33,7 +28,6 @@ def format_date(date_val) -> str:
 
 
 def truncate(text: str, length: int = 100) -> str:
-    """Truncate text with ellipsis."""
     if not text:
         return ""
     text = html.escape(text.strip())
@@ -43,7 +37,6 @@ def truncate(text: str, length: int = 100) -> str:
 
 
 def extract_name(addr: str) -> str:
-    """Extract display name from email address."""
     if not addr:
         return ""
     if "<" in addr:
@@ -52,7 +45,6 @@ def extract_name(addr: str) -> str:
 
 
 async def get_embedding(text: str) -> Optional[list[float]]:
-    """Get embedding from LiteLLM endpoint."""
     api_base = os.environ.get("EMBEDDINGS_API_BASE")
     api_key = os.environ.get("EMBEDDINGS_API_KEY", "")
     model = os.environ.get("EMBEDDINGS_MODEL", "text-embedding-3-small")
@@ -77,14 +69,12 @@ async def get_embedding(text: str) -> Optional[list[float]]:
 @router.get("/search", response_class=HTMLResponse)
 async def search(
     request: Request,
-    q: str = Query("", description="Search query"),
-    mode: str = Query("keyword", description="Search mode: keyword or semantic"),
+    q: str = Query(""),
+    mode: str = Query("keyword"),
     folder: str = Query("INBOX"),
     limit: int = Query(50, ge=1, le=100),
 ):
-    """Search emails by keyword or semantic similarity."""
-    db = get_db()
-    results = []
+    supports_semantic = db.has_embeddings()
 
     if not q.strip():
         return templates.TemplateResponse(
@@ -95,43 +85,32 @@ async def search(
                 "mode": mode,
                 "results": [],
                 "folder": folder,
+                "supports_semantic": supports_semantic,
             },
         )
 
-    if mode == "semantic" and db.supports_embeddings():
+    results_raw = []
+    if mode == "semantic" and supports_semantic:
         embedding = await get_embedding(q)
         if embedding:
-            results_raw = db.semantic_search(
-                query_embedding=embedding,
-                folder=folder,
-                limit=limit,
-                similarity_threshold=0.5,
-            )
+            results_raw = db.semantic_search(embedding, folder, limit)
         else:
-            results_raw = db.search_emails(
-                folder=folder,
-                body_contains=q,
-                limit=limit,
-            )
+            results_raw = db.search_emails(q, folder, limit)
     else:
-        results_raw = db.search_emails(
-            folder=folder,
-            body_contains=q,
-            limit=limit,
-        )
+        results_raw = db.search_emails(q, folder, limit)
 
-    for e in results_raw:
-        results.append(
-            {
-                "uid": e["uid"],
-                "folder": e.get("folder", folder),
-                "from_name": extract_name(e.get("from_addr", "")),
-                "subject": e.get("subject", "(no subject)"),
-                "preview": truncate(e.get("body_text", ""), 150),
-                "date": format_date(e.get("date")),
-                "similarity": e.get("similarity"),
-            }
-        )
+    results = [
+        {
+            "uid": e["uid"],
+            "folder": e.get("folder", folder),
+            "from_name": extract_name(e.get("from_addr", "")),
+            "subject": e.get("subject", "(no subject)"),
+            "preview": truncate(e.get("preview") or "", 150),
+            "date": format_date(e.get("date")),
+            "similarity": e.get("similarity"),
+        }
+        for e in results_raw
+    ]
 
     return templates.TemplateResponse(
         "search.html",
@@ -141,6 +120,6 @@ async def search(
             "mode": mode,
             "results": results,
             "folder": folder,
-            "supports_semantic": db.supports_embeddings(),
+            "supports_semantic": supports_semantic,
         },
     )

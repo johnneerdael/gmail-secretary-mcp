@@ -103,6 +103,29 @@
     </div>
 
     <div class="flex items-center space-x-3">
+        {% if calendar_invite %}
+        <div class="flex items-center space-x-2 mr-4 px-3 py-2 bg-blue-900/30 border border-blue-800 rounded-lg">
+            <span class="text-sm text-blue-300">📅 Meeting Invite</span>
+            <button hx-post="/api/calendar/respond/{{ calendar_invite.event_id }}?response=accepted"
+                    hx-swap="none"
+                    hx-on::after-request="window.showToast('Accepted!', 'success')"
+                    class="px-3 py-1 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded">
+                ✓ Accept
+            </button>
+            <button hx-post="/api/calendar/respond/{{ calendar_invite.event_id }}?response=tentative"
+                    hx-swap="none"
+                    hx-on::after-request="window.showToast('Tentatively accepted', 'info')"
+                    class="px-3 py-1 text-xs font-medium text-gray-300 bg-gray-700 hover:bg-gray-600 rounded">
+                ? Maybe
+            </button>
+            <button hx-post="/api/calendar/respond/{{ calendar_invite.event_id }}?response=declined"
+                    hx-swap="none"
+                    hx-on::after-request="window.showToast('Declined', 'info')"
+                    class="px-3 py-1 text-xs font-medium text-white bg-red-600 hover:bg-red-700 rounded">
+                ✕ Decline
+            </button>
+        </div>
+        {% endif %}
         <button class="px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary/90"
                 hx-get="/compose?reply_to={{ uid }}&folder={{ folder }}"
                 hx-target="#modal-container"

@@ -113,3 +113,70 @@ async def get_folders() -> dict:
 
 async def get_labels() -> dict:
     return await _request("GET", "/api/internal/labels")
+
+
+# Calendar operations
+
+
+async def get_calendar_events(
+    time_min: str, time_max: str, calendar_id: str = "primary"
+) -> dict:
+    return await _request(
+        "GET",
+        f"/api/calendar/events?time_min={time_min}&time_max={time_max}&calendar_id={calendar_id}",
+    )
+
+
+async def get_calendar_availability(time_min: str, time_max: str) -> dict:
+    return await _request(
+        "GET", f"/api/calendar/availability?time_min={time_min}&time_max={time_max}"
+    )
+
+
+async def create_calendar_event(
+    summary: str,
+    start_time: str,
+    end_time: str,
+    description: Optional[str] = None,
+    location: Optional[str] = None,
+    attendees: Optional[list[str]] = None,
+    add_meet: bool = False,
+    calendar_id: str = "primary",
+) -> dict:
+    payload: dict[str, str | bool | list[str]] = {
+        "summary": summary,
+        "start_time": start_time,
+        "end_time": end_time,
+        "calendar_id": calendar_id,
+        "add_meet": add_meet,
+    }
+    if description:
+        payload["description"] = description
+    if location:
+        payload["location"] = location
+    if attendees:
+        payload["attendees"] = attendees
+    return await _request("POST", "/api/calendar/event", payload)
+
+
+async def respond_to_invite(
+    event_id: str, response: str, calendar_id: str = "primary"
+) -> dict:
+    return await _request(
+        "POST",
+        "/api/calendar/respond",
+        {"event_id": event_id, "calendar_id": calendar_id, "response": response},
+    )
+
+
+async def get_calendar_event(calendar_id: str, event_id: str) -> dict:
+    return await _request("GET", f"/api/calendar/{calendar_id}/events/{event_id}")
+
+
+async def freebusy_query(
+    time_min: str, time_max: str, calendar_ids: Optional[list[str]] = None
+) -> dict:
+    payload: dict[str, str | list[str]] = {"time_min": time_min, "time_max": time_max}
+    if calendar_ids:
+        payload["calendar_ids"] = calendar_ids
+    return await _request("POST", "/api/calendar/freebusy", payload)

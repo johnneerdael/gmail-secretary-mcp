@@ -17,13 +17,21 @@ logger = logging.getLogger(__name__)
 
 def main():
     from workspace_secretary.web import web_app
-    from workspace_secretary.web.routes import inbox, thread, search, actions, compose
+    from workspace_secretary.web.routes import (
+        inbox,
+        thread,
+        search,
+        actions,
+        compose,
+        calendar,
+    )
 
     web_app.include_router(inbox.router)
     web_app.include_router(thread.router)
     web_app.include_router(search.router)
     web_app.include_router(actions.router)
     web_app.include_router(compose.router)
+    web_app.include_router(calendar.router)
 
     host = os.environ.get("WEB_HOST", "0.0.0.0")
     port = int(os.environ.get("WEB_PORT", "8080"))

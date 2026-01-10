@@ -57,6 +57,39 @@ def text_to_html(text: str) -> str:
     return f"<p>{text}</p>"
 
 
+def detect_calendar_invite(email: dict) -> dict | None:
+    content_type = email.get("content_type", "")
+    subject = email.get("subject", "").lower()
+    body_text = email.get("body_text", "").lower()
+
+    is_invite = (
+        "calendar" in content_type
+        or "text/calendar" in content_type
+        or "invitation" in subject
+        or "invite" in subject
+        or "meeting request" in subject
+        or "vcalendar" in body_text
+        or "begin:vevent" in body_text
+    )
+
+    if not is_invite:
+        return None
+
+    event_id = email.get("calendar_event_id")
+    if not event_id:
+        message_id = email.get("message_id", "")
+        event_id = (
+            message_id.replace("<", "").replace(">", "").split("@")[0]
+            if message_id
+            else None
+        )
+
+    return {
+        "event_id": event_id,
+        "subject": email.get("subject", "Meeting"),
+    }
+
+
 @router.get("/thread/{folder}/{uid}", response_class=HTMLResponse)
 async def thread_view(request: Request, folder: str, uid: int):
     email = db.get_email(uid, folder)
@@ -68,10 +101,15 @@ async def thread_view(request: Request, folder: str, uid: int):
         thread_emails = [email]
 
     messages = []
+    calendar_invite = None
+
     for e in thread_emails:
         body_html = e.get("body_html", "")
         body_text = e.get("body_text", "")
         content = sanitize_html(body_html) if body_html else text_to_html(body_text)
+
+        if not calendar_invite:
+            calendar_invite = detect_calendar_invite(e)
 
         messages.append(
             {
@@ -98,5 +136,6 @@ async def thread_view(request: Request, folder: str, uid: int):
             "messages": messages,
             "folder": folder,
             "uid": uid,
+            "calendar_invite": calendar_invite,
         },
     )

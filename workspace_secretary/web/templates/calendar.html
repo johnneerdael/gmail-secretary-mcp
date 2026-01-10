@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% block title %}Calendar - Secretary{% endblock %}
+
+{% block content %}
+<div class="space-y-4">
+    <div class="flex items-center justify-between">
+        <h1 class="text-xl font-bold">Calendar</h1>
+        <div class="flex items-center space-x-2">
+            <a href="/calendar?week_offset={{ week_offset - 1 }}" 
+               class="px-3 py-1 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded">
+                ← Prev
+            </a>
+            <span class="text-sm text-gray-400">
+                {{ week_start.strftime('%b %d') }} - {{ week_end.strftime('%b %d, %Y') }}
+            </span>
+            <a href="/calendar?week_offset={{ week_offset + 1 }}" 
+               class="px-3 py-1 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded">
+                Next →
+            </a>
+            {% if week_offset != 0 %}
+            <a href="/calendar" class="px-3 py-1 text-sm text-blue-400 hover:text-blue-300">
+                Today
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="grid grid-cols-7 gap-2">
+        {% for day in days %}
+        <div class="bg-gray-900 rounded-lg p-3 min-h-[200px] {% if day.is_today %}ring-1 ring-primary{% endif %}">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-sm font-medium {% if day.is_today %}text-primary{% else %}text-gray-400{% endif %}">
+                    {{ day.name }}
+                </span>
+                <span class="text-xs text-gray-500">{{ day.short }}</span>
+            </div>
+            <div class="space-y-1">
+                {% for event in day.events %}
+                <div class="text-xs p-2 rounded bg-gray-800 hover:bg-gray-700 cursor-pointer"
+                     x-data="{ expanded: false }"
+                     @click="expanded = !expanded">
+                    <div class="flex items-start justify-between">
+                        <span class="font-medium text-white truncate flex-1">{{ event.summary }}</span>
+                        {% if event.start.dateTime %}
+                        <span class="text-gray-500 ml-1">
+                            {{ event.start.dateTime[11:16] }}
+                        </span>
+                        {% endif %}
+                    </div>
+                    <div x-show="expanded" x-cloak class="mt-2 pt-2 border-t border-gray-700 space-y-1">
+                        {% if event.location %}
+                        <p class="text-gray-400">📍 {{ event.location }}</p>
+                        {% endif %}
+                        {% if event.hangoutLink %}
+                        <a href="{{ event.hangoutLink }}" target="_blank" 
+                           class="text-blue-400 hover:text-blue-300 block">
+                            🎥 Join Meet
+                        </a>
+                        {% endif %}
+                        {% if event.attendees %}
+                        <p class="text-gray-500">{{ event.attendees|length }} attendees</p>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <p class="text-xs text-gray-600 italic">No events</p>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="flex justify-end">
+        <button @click="$dispatch('open-create-event')"
+                class="px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary/90">
+            + New Event
+        </button>
+    </div>
+</div>
+
+<div x-data="{ open: false }" 
+     @open-create-event.window="open = true"
+     @keydown.escape.window="open = false">
+    <template x-if="open">
+        <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div class="bg-gray-900 rounded-lg shadow-xl w-full max-w-md mx-4">
+                <div class="flex items-center justify-between px-4 py-3 border-b border-gray-800">
+                    <h2 class="text-lg font-semibold text-white">New Event</h2>
+                    <button @click="open = false" class="text-gray-400 hover:text-white p-1">✕</button>
+                </div>
+                
+                <form hx-post="/api/calendar/event" 
+                      hx-swap="none"
+                      hx-on::after-request="if(event.detail.successful) { open = false; window.location.reload(); }"
+                      class="p-4 space-y-4">
+                    
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">Title</label>
+                        <input type="text" name="summary" required
+                               class="w-full bg-gray-800 text-white text-sm rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-primary">
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">Start</label>
+                            <input type="datetime-local" name="start_time" required
+                                   class="w-full bg-gray-800 text-white text-sm rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">End</label>
+                            <input type="datetime-local" name="end_time" required
+                                   class="w-full bg-gray-800 text-white text-sm rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-primary">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">Location</label>
+                        <input type="text" name="location"
+                               class="w-full bg-gray-800 text-white text-sm rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-primary">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">Attendees (comma-separated emails)</label>
+                        <input type="text" name="attendees"
+                               class="w-full bg-gray-800 text-white text-sm rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-primary"
+                               placeholder="user@example.com, other@example.com">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">Description</label>
+                        <textarea name="description" rows="3"
+                                  class="w-full bg-gray-800 text-white text-sm rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-primary resize-none"></textarea>
+                    </div>
+                    
+                    <div class="flex items-center space-x-2">
+                        <input type="checkbox" name="add_meet" id="add_meet" value="true"
+                               class="rounded bg-gray-800 border-gray-700 text-primary focus:ring-primary">
+                        <label for="add_meet" class="text-sm text-gray-300">Add Google Meet link</label>
+                    </div>
+                    
+                    <div class="flex justify-end space-x-2 pt-2">
+                        <button type="button" @click="open = false"
+                                class="px-4 py-2 text-sm text-gray-300 hover:text-white">
+                            Cancel
+                        </button>
+                        <button type="submit"
+                                class="px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary/90">
+                            Create Event
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </template>
+</div>
+{% endblock %}

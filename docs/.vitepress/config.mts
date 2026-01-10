@@ -14,10 +14,11 @@ export default defineConfig({
       { text: 'Home', link: '/' },
       { text: 'Getting Started', link: '/getting-started' },
       { text: 'Guide', link: '/guide/' },
-      { text: 'Architecture', link: '/architecture' },
+      { text: 'Web Server', link: '/webserver/' },
+      { text: 'Embeddings', link: '/embeddings/' },
       { text: 'MCP Tools', link: '/tools/' },
       {
-        text: 'v4.0,0',
+        text: 'v4.0.0',
         items: [
           { text: 'Changelog', link: 'https://github.com/johnneerdael/gmail-secretary-mcp/releases' },
           { text: 'Contributing', link: 'https://github.com/johnneerdael/gmail-workspace-mcp' }
@@ -41,6 +42,22 @@ export default defineConfig({
             { text: 'Agent Patterns', link: '/guide/agents' },
             { text: 'Use Cases', link: '/guide/use-cases' },
             { text: 'OpenCode Integration', link: '/guide/opencode' }
+          ]
+        }
+      ],
+      '/webserver/': [
+        {
+          text: 'Web Server',
+          items: [
+            { text: 'Overview', link: '/webserver/' }
+          ]
+        }
+      ],
+      '/embeddings/': [
+        {
+          text: 'Embeddings',
+          items: [
+            { text: 'Overview', link: '/embeddings/' }
           ]
         }
       ],

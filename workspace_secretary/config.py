@@ -377,21 +377,21 @@ class EmbeddingsConfig:
     """Embeddings configuration for semantic search."""
 
     enabled: bool = False
-    provider: str = "openai_compat"  # openai_compat | cohere | gemini
+    provider: str = "gemini"  # gemini | cohere | openai_compat
     fallback_provider: Optional[str] = None  # Optional fallback on rate limit
     endpoint: str = "https://api.openai.com/v1/embeddings"
     model: str = "text-embedding-3-small"
     api_key: str = ""
-    dimensions: int = 1536
+    dimensions: int = 3072  # 3072 recommended for best quality
     batch_size: int = 100
-    max_chars: int = 500000
+    max_chars: int = 8000  # Gemini limit
     # Cohere-specific options
     input_type: str = "search_document"  # Cohere: search_document | search_query
     truncate: str = "END"  # Cohere: NONE | START | END
     # Gemini-specific options
-    gemini_api_key: str = ""  # Separate API key for Gemini (fallback)
+    gemini_api_key: str = ""  # API key for Gemini provider
     gemini_model: str = (
-        "gemini-embedding-001"  # gemini-embedding-001 | text-embedding-004
+        "text-embedding-004"  # text-embedding-004 | gemini-embedding-001
     )
     task_type: str = (
         "RETRIEVAL_DOCUMENT"  # Gemini: RETRIEVAL_DOCUMENT | RETRIEVAL_QUERY
@@ -409,18 +409,18 @@ class EmbeddingsConfig:
         )
         return cls(
             enabled=data.get("enabled", False),
-            provider=data.get("provider", "openai_compat"),
+            provider=data.get("provider", "gemini"),
             fallback_provider=data.get("fallback_provider"),
             endpoint=data.get("endpoint", "https://api.openai.com/v1/embeddings"),
             model=data.get("model", "text-embedding-3-small"),
             api_key=api_key,
-            dimensions=data.get("dimensions", 1536),
+            dimensions=data.get("dimensions", 3072),
             batch_size=data.get("batch_size", 100),
-            max_chars=data.get("max_chars", 500000),
+            max_chars=data.get("max_chars", 8000),
             input_type=data.get("input_type", "search_document"),
             truncate=data.get("truncate", "END"),
             gemini_api_key=gemini_api_key,
-            gemini_model=data.get("gemini_model", "gemini-embedding-001"),
+            gemini_model=data.get("gemini_model", "text-embedding-004"),
             task_type=data.get("task_type", "RETRIEVAL_DOCUMENT"),
         )
 

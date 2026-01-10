@@ -6,94 +6,134 @@ Gmail Secretary supports AI-powered semantic search using vector embeddings. Ins
 
 ```
 ┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
-│   Email Text    │────▶│ Embeddings API   │────▶│ Vector (1536d)  │
-│ "Meeting moved" │     │ (Cohere/Gemini)  │     │ [0.12, -0.34,…] │
+│   Email Text    │────▶│ Embeddings API   │────▶│ Vector (3072d)  │
+│ "Meeting moved" │     │ (Gemini default) │     │ [0.12, -0.34,…] │
 └─────────────────┘     └──────────────────┘     └─────────────────┘
                                                           │
+                              L2 Normalized ──────────────┤
                                                           ▼
 ┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
-│  Search Query   │────▶│ Embeddings API   │────▶│   Similarity    │
-│ "schedule change"│    │                  │     │     Search      │
+│  Search Query   │────▶│ Embeddings API   │────▶│  Inner Product  │
+│ "schedule change"│    │  + Hard Filters  │     │     Search      │
 └─────────────────┘     └──────────────────┘     └─────────────────┘
 ```
+
+## Architecture
+
+### Why These Design Choices?
+
+| Design | Choice | Why |
+|--------|--------|-----|
+| **Provider** | Gemini (default) | Best quality/cost ratio, 3072 dims, generous free tier |
+| **Dimensions** | 3072 | Captures nuances in business emails and professional jargon |
+| **Normalization** | All vectors L2-normalized | Enables faster inner product search |
+| **Index** | HNSW with `vector_ip_ops` | Inner product is faster than cosine for normalized vectors |
+| **Search** | Metadata-augmented | Hard filters prevent "vector drift" |
+
+### Metadata-Augmented Search
+
+The strongest pattern for LLM search is **hard filters FIRST, then semantic ranking**:
+
+```sql
+-- Prevents finding semantically similar emails from wrong sender/date
+SELECT * FROM emails e
+JOIN email_embeddings emb ON ...
+WHERE e.from_addr ILIKE '%john%'        -- Hard filter (metadata)
+  AND e.date >= '2024-01-01'            -- Hard filter (metadata)
+ORDER BY emb.embedding <#> query_vec    -- Semantic ranking
+LIMIT 10;
+```
+
+This prevents "vector drift" where search finds semantically similar content from the wrong context.
 
 ## Requirements
 
 - **PostgreSQL** with **pgvector** extension
-- **Embeddings API** (Cohere, Gemini, OpenAI, or compatible)
+- **Embeddings API** (Gemini recommended, or Cohere/OpenAI)
+
+## Dimension Selection Guide
+
+::: danger Important: Choose Dimensions Carefully
+**Dimension size cannot be changed after initial sync without re-embedding all emails.** Choose based on your mailbox size and quality needs.
+:::
+
+| Dimensions | Quality | Storage (25k emails) | Search Speed | Best For |
+|------------|---------|---------------------|--------------|----------|
+| **768** | Good | ~60 MB | Fastest | Personal email, cost-sensitive |
+| **1536** | Better | ~120 MB | Fast | Most users, balanced |
+| **3072** | Best | ~240 MB | Good | Business email, nuanced search |
+
+### When to Use Each
+
+**768 dimensions** (Gemini default for `gemini-embedding-001`):
+- ✅ Personal email with simple queries
+- ✅ Running on limited hardware
+- ✅ Free tier with tight limits
+- ❌ Complex business correspondence
+- ❌ Nuanced professional jargon
+
+**1536 dimensions** (Cohere/OpenAI default):
+- ✅ General purpose, good balance
+- ✅ Mixed personal and work email
+- ✅ Most common choice
+
+**3072 dimensions** (Recommended for `text-embedding-004`):
+- ✅ Business email with complex threads
+- ✅ Professional/legal/technical jargon
+- ✅ Nuanced queries ("find emails where client seemed frustrated")
+- ✅ Long email chains with context
+- ❌ Overkill for simple personal email
 
 ## Model Defaults Reference
 
-Use this table to configure optimal settings for your provider:
-
 | Provider | Model | Dimensions | Batch Size | Max Chars | Rate Limits |
 |----------|-------|------------|------------|-----------|-------------|
+| **Gemini (free)** | `gemini-embedding-001` | 768 | 100 | 8000 | 100 RPM, 30k TPM, 1k RPD |
+| **Gemini (paid)** | `text-embedding-004` | 3072 | 100 | 8000 | 3k RPM, 1M TPM |
 | **Cohere (trial)** | `embed-v4.0` | 1536 | 80 | 40000 | 100k tok/min, 1k calls/mo |
 | **Cohere (prod)** | `embed-v4.0` | 1536 | 96 | 500000 | 2k inputs/min |
-| **Gemini (free)** | `gemini-embedding-001` | 768 | 100 | 8000 | 100 RPM, 30k TPM, 1k RPD |
-| **Gemini (paid)** | `text-embedding-004` | 768-3072 | 100 | 8000 | 3k RPM, 1M TPM |
 | **OpenAI** | `text-embedding-3-small` | 1536 | 100 | 32000 | Varies by tier |
 | **OpenAI** | `text-embedding-3-large` | 3072 | 100 | 32000 | Varies by tier |
 
-::: tip Choosing Dimensions
-- **768**: Fastest, good for most use cases
-- **1536**: Balanced quality/performance (recommended)
-- **3072**: Highest quality, more storage, slower searches
-:::
+## Quick Start (Gemini Recommended)
+
+```yaml
+embeddings:
+  enabled: true
+  provider: gemini
+  gemini_api_key: ${GEMINI_API_KEY}
+  gemini_model: text-embedding-004
+  dimensions: 3072
+  task_type: RETRIEVAL_DOCUMENT
+```
+
+Get your API key at [Google AI Studio](https://aistudio.google.com/apikey).
 
 ## Recommended Configurations
 
 Copy-paste configs optimized for each tier. These settings are tuned to **maximize throughput while staying within rate limits**.
 
-### Cohere Free Tier (Trial Key)
+### Gemini Pay-as-you-go (Recommended)
 
-**Limits**: 100k tokens/min, 1,000 API calls/month
-
-```yaml
-embeddings:
-  enabled: true
-  provider: cohere
-  model: embed-v4.0
-  api_key: ${COHERE_API_KEY}
-  dimensions: 1536
-  batch_size: 80          # Stay under 96 limit, leave headroom
-  max_chars: 40000        # ~10k tokens/batch, safe under 100k/min
-  input_type: search_document
-  truncate: END
-```
-
-::: warning Monthly Call Limit
-With 1,000 calls/month on trial, you can embed ~80,000 emails total (80 emails × 1,000 calls). For larger mailboxes, upgrade to production or use Gemini as fallback.
-:::
-
-**What these settings mean:**
-- `batch_size: 80` → 80 emails per API call (Cohere max is 96, we leave buffer)
-- `max_chars: 40000` → Truncate emails to ~40k chars (~10k tokens per batch)
-- At 100k tokens/min limit, you can make ~10 batches/min = 800 emails/min
-- **Initial sync of 25k emails**: ~31 minutes
-
-### Cohere Production Key
-
-**Limits**: 2,000 inputs/min, no monthly limit
+**Limits**: 3,000 RPM, 1M TPM, unlimited daily
 
 ```yaml
 embeddings:
   enabled: true
-  provider: cohere
-  model: embed-v4.0
-  api_key: ${COHERE_API_KEY}
-  dimensions: 1536
-  batch_size: 96          # Max allowed by Cohere
-  max_chars: 500000       # Full email support
-  input_type: search_document
-  truncate: END
+  provider: gemini
+  gemini_api_key: ${GEMINI_API_KEY}
+  gemini_model: text-embedding-004
+  dimensions: 3072        # Best quality for business email
+  batch_size: 100
+  max_chars: 8000
+  task_type: RETRIEVAL_DOCUMENT
 ```
 
 **What these settings mean:**
-- `batch_size: 96` → Maximum throughput per call
-- `max_chars: 500000` → No client-side truncation (server handles it)
-- At 2k inputs/min, you can embed 2,000 emails/min
-- **Initial sync of 25k emails**: ~13 minutes
+- `dimensions: 3072` → Maximum semantic nuance
+- `batch_size: 100` → Maximum throughput
+- All vectors are L2-normalized for inner product search
+- **Initial sync of 25k emails**: ~8 seconds
 
 ### Gemini Free Tier
 
@@ -105,9 +145,9 @@ embeddings:
   provider: gemini
   gemini_api_key: ${GEMINI_API_KEY}
   gemini_model: gemini-embedding-001
-  dimensions: 768         # Smallest dimension, fastest
-  batch_size: 20          # Conservative: 20 emails × 100 RPM = 2k emails/min max
-  max_chars: 8000         # Gemini limit ~8k chars
+  dimensions: 768         # Smaller for free tier
+  batch_size: 20
+  max_chars: 8000
   task_type: RETRIEVAL_DOCUMENT
 ```
 
@@ -115,63 +155,7 @@ embeddings:
 With 1,000 requests/day on free tier, you can only embed ~20,000 emails/day (20 emails × 1,000 requests). For initial sync of large mailboxes, this will take multiple days or use fallback.
 :::
 
-**What these settings mean:**
-- `batch_size: 20` → 20 emails per request, conservative for TPM limit
-- `dimensions: 768` → Smallest output, faster searches, less storage
-- `max_chars: 8000` → Gemini's input limit
-- At 100 RPM with batch of 20 → theoretical 2,000 emails/min
-- But 30k TPM limits you to ~60 batches/min (500 tokens/email avg)
-- **Effective rate**: ~1,200 emails/min
-- **Daily limit**: 1,000 requests × 20 = 20,000 emails/day
-- **Initial sync of 25k emails**: 2 days (hitting daily limit)
-
-### Gemini Pay-as-you-go
-
-**Limits**: 3,000 RPM, 1M TPM, unlimited daily
-
-```yaml
-embeddings:
-  enabled: true
-  provider: gemini
-  gemini_api_key: ${GEMINI_API_KEY}
-  gemini_model: text-embedding-004
-  dimensions: 1536        # Higher quality
-  batch_size: 100         # Max batch size
-  max_chars: 8000
-  task_type: RETRIEVAL_DOCUMENT
-```
-
-**What these settings mean:**
-- `batch_size: 100` → Maximum throughput
-- `dimensions: 1536` → Better quality, paid tier can handle it
-- At 3k RPM with batch of 100 → 300,000 emails/min theoretical
-- TPM limit of 1M tokens/min → ~2,000 batches/min (500 tok/email)
-- **Effective rate**: ~200,000 emails/min (TPM limited)
-- **Initial sync of 25k emails**: ~8 seconds
-
-### OpenAI
-
-**Limits**: Vary by tier (typically 3,000 RPM for Tier 1)
-
-```yaml
-embeddings:
-  enabled: true
-  provider: openai_compat
-  endpoint: https://api.openai.com/v1
-  model: text-embedding-3-small
-  api_key: ${OPENAI_API_KEY}
-  dimensions: 1536
-  batch_size: 100
-  max_chars: 32000        # ~8k tokens max input
-```
-
-**What these settings mean:**
-- `batch_size: 100` → Good balance of throughput and reliability
-- `max_chars: 32000` → OpenAI limit ~8k tokens
-- At 3k RPM (Tier 1) with batch of 100 → 300,000 emails/min
-- **Initial sync of 25k emails**: ~5 seconds
-
-### Fallback Configuration (Recommended for Free Tiers)
+### Cohere Free Tier (Trial Key)
 
 Combine free tiers for resilience. When Cohere hits rate limit, automatically switch to Gemini:
 

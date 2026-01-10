@@ -1095,6 +1095,77 @@ def register_tools(
                 logger.error(f"Error finding related emails: {e}")
                 return json.dumps({"error": str(e)})
 
+        @mcp.tool()
+        async def semantic_search_filtered(
+            query: str,
+            folder: Optional[str] = None,
+            from_addr: Optional[str] = None,
+            to_addr: Optional[str] = None,
+            date_from: Optional[str] = None,
+            date_to: Optional[str] = None,
+            has_attachments: Optional[bool] = None,
+            limit: int = 20,
+            ctx: Context = None,  # type: ignore
+        ) -> str:
+            """Metadata-augmented semantic search - combines hard filters with AI similarity.
+
+            Hard filters are applied FIRST to prevent "vector drift" (finding semantically
+            similar emails from wrong sender/date range). Then results are ranked by
+            semantic similarity.
+
+            Args:
+                query: Natural language query (e.g., "budget concerns", "project timeline")
+                folder: Filter by folder (e.g., "INBOX", "[Gmail]/Sent Mail")
+                from_addr: Filter by sender (partial match, e.g., "john" matches "john@example.com")
+                to_addr: Filter by recipient in To/CC (partial match)
+                date_from: Filter emails on or after this date (YYYY-MM-DD)
+                date_to: Filter emails on or before this date (YYYY-MM-DD)
+                has_attachments: Filter by attachment presence (true/false)
+                limit: Maximum results (default 20)
+                ctx: MCP context
+
+            Returns:
+                JSON list of emails matching filters, ranked by semantic similarity
+            """
+            try:
+                db = _get_database(ctx)
+                embeddings = _get_embeddings_client(ctx)
+
+                if not embeddings:
+                    return json.dumps({"error": "Embeddings not available"})
+
+                if not db.supports_embeddings():
+                    return json.dumps({"error": "Database does not support embeddings"})
+
+                result = await embeddings.embed_query(query)
+
+                emails = db.semantic_search_filtered(
+                    query_embedding=result.embedding,
+                    folder=folder,
+                    from_addr=from_addr,
+                    to_addr=to_addr,
+                    date_from=date_from,
+                    date_to=date_to,
+                    has_attachments=has_attachments,
+                    limit=limit,
+                )
+
+                if not emails:
+                    return json.dumps(
+                        {"message": "No emails found matching filters and query"}
+                    )
+
+                results = []
+                for email in emails:
+                    r = _format_email_summary(email)
+                    r["similarity"] = round(email.get("similarity", 0), 3)
+                    results.append(r)
+
+                return json.dumps(results, indent=2, default=str)
+            except Exception as e:
+                logger.error(f"Error in filtered semantic search: {e}")
+                return json.dumps({"error": str(e)})
+
     # ============================================================
     # BATCH OPERATION TOOLS (Time-boxed with continuation)
     # ============================================================

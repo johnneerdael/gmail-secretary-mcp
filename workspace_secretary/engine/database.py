@@ -200,6 +200,21 @@ class DatabaseInterface(ABC):
         """Find emails similar to a given email. Only available with pgvector."""
         raise NotImplementedError("Embeddings not supported by this backend")
 
+    def semantic_search_filtered(
+        self,
+        query_embedding: list[float],
+        limit: int = 20,
+        folder: Optional[str] = None,
+        from_addr: Optional[str] = None,
+        to_addr: Optional[str] = None,
+        date_from: Optional[str] = None,
+        date_to: Optional[str] = None,
+        has_attachments: Optional[bool] = None,
+        similarity_threshold: float = 0.5,
+    ) -> list[dict[str, Any]]:
+        """Metadata-augmented semantic search. Only available with pgvector."""
+        raise NotImplementedError("Embeddings not supported by this backend")
+
     def get_emails_needing_embedding(
         self, folder: str, limit: int = 100
     ) -> list[dict[str, Any]]:
@@ -818,10 +833,12 @@ class PostgresDatabase(DatabaseInterface):
                 )
 
                 # Create HNSW index for vector similarity search
+                # Using inner product (vector_ip_ops) - faster than cosine for normalized vectors
+                # All vectors are L2-normalized before storage, so inner product = cosine similarity
                 cur.execute(
                     """
                     CREATE INDEX IF NOT EXISTS idx_embeddings_vector 
-                    ON email_embeddings USING hnsw (embedding vector_cosine_ops)
+                    ON email_embeddings USING hnsw (embedding vector_ip_ops)
                     """
                 )
 
@@ -1236,38 +1253,22 @@ class PostgresDatabase(DatabaseInterface):
         folder: Optional[str] = None,
         similarity_threshold: float = 0.7,
     ) -> list[dict[str, Any]]:
-        """Search emails by semantic similarity using pgvector."""
-        conditions = ["1 - (ee.embedding <=> %s) >= %s"]
-        params: list[Any] = [query_embedding, similarity_threshold]
+        """Search emails by semantic similarity using pgvector.
 
-        if folder:
-            conditions.append("ee.email_folder = %s")
-            params.append(folder)
-
-        params.append(limit)
-
-        query = f"""
-            SELECT e.*, 1 - (ee.embedding <=> %s) as similarity
-            FROM emails e
-            JOIN email_embeddings ee ON e.uid = ee.email_uid AND e.folder = ee.email_folder
-            WHERE {" AND ".join(conditions)}
-            ORDER BY ee.embedding <=> %s
-            LIMIT %s
+        Uses inner product (<#>) operator which is faster than cosine for normalized vectors.
+        All vectors are L2-normalized before storage, so inner product equals cosine similarity.
+        Note: <#> returns negative inner product, so we negate it for similarity score.
         """
-
-        # Add query_embedding twice more for SELECT and ORDER BY clauses
-        full_params = [query_embedding] + params + [query_embedding, limit]
-
         with self.connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
                     f"""
-                    SELECT e.*, 1 - (ee.embedding <=> %s::vector) as similarity
+                    SELECT e.*, -(emb.embedding <#> %s::vector) as similarity
                     FROM emails e
-                    JOIN email_embeddings ee ON e.uid = ee.email_uid AND e.folder = ee.email_folder
-                    WHERE 1 - (ee.embedding <=> %s::vector) >= %s
-                    {"AND ee.email_folder = %s" if folder else ""}
-                    ORDER BY ee.embedding <=> %s::vector
+                    JOIN email_embeddings emb ON e.uid = emb.email_uid AND e.folder = emb.email_folder
+                    WHERE -(emb.embedding <#> %s::vector) >= %s
+                    {"AND emb.email_folder = %s" if folder else ""}
+                    ORDER BY emb.embedding <#> %s::vector
                     LIMIT %s
                     """,
                     (
@@ -1285,20 +1286,85 @@ class PostgresDatabase(DatabaseInterface):
     def find_similar_emails(
         self, email_uid: int, email_folder: str, limit: int = 10
     ) -> list[dict[str, Any]]:
-        """Find emails similar to a given email."""
+        """Find emails similar to a given email.
+
+        Uses inner product (<#>) for faster similarity search on normalized vectors.
+        """
         with self.connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
                     """
-                    SELECT e.*, 1 - (ee.embedding <=> source.embedding) as similarity
+                    SELECT e.*, -(emb.embedding <#> source.embedding) as similarity
                     FROM email_embeddings source
-                    JOIN email_embeddings ee ON ee.email_uid != source.email_uid OR ee.email_folder != source.email_folder
-                    JOIN emails e ON e.uid = ee.email_uid AND e.folder = ee.email_folder
+                    JOIN email_embeddings emb ON emb.email_uid != source.email_uid OR emb.email_folder != source.email_folder
+                    JOIN emails e ON e.uid = emb.email_uid AND e.folder = emb.email_folder
                     WHERE source.email_uid = %s AND source.email_folder = %s
-                    ORDER BY ee.embedding <=> source.embedding
+                    ORDER BY emb.embedding <#> source.embedding
                     LIMIT %s
                     """,
                     (email_uid, email_folder, limit),
+                )
+                columns = [desc[0] for desc in cur.description]
+                return [dict(zip(columns, row)) for row in cur.fetchall()]
+
+    def semantic_search_filtered(
+        self,
+        query_embedding: list[float],
+        limit: int = 20,
+        folder: Optional[str] = None,
+        from_addr: Optional[str] = None,
+        to_addr: Optional[str] = None,
+        date_from: Optional[str] = None,
+        date_to: Optional[str] = None,
+        has_attachments: Optional[bool] = None,
+        similarity_threshold: float = 0.5,
+    ) -> list[dict[str, Any]]:
+        """Metadata-augmented semantic search - hard filters FIRST, then vector ranking.
+
+        This prevents "vector drift" by ensuring results match metadata constraints
+        before applying semantic similarity ranking.
+        """
+        conditions = ["-(emb.embedding <#> %s::vector) >= %s"]
+        params: list[Any] = [query_embedding, similarity_threshold]
+
+        if folder:
+            conditions.append("e.folder = %s")
+            params.append(folder)
+
+        if from_addr:
+            conditions.append("e.from_addr ILIKE %s")
+            params.append(f"%{from_addr}%")
+
+        if to_addr:
+            conditions.append("(e.to_addrs ILIKE %s OR e.cc_addrs ILIKE %s)")
+            params.extend([f"%{to_addr}%", f"%{to_addr}%"])
+
+        if date_from:
+            conditions.append("e.date >= %s")
+            params.append(date_from)
+
+        if date_to:
+            conditions.append("e.date <= %s")
+            params.append(date_to)
+
+        if has_attachments is not None:
+            conditions.append("e.has_attachments = %s")
+            params.append(has_attachments)
+
+        params.extend([query_embedding, query_embedding, limit])
+
+        with self.connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    f"""
+                    SELECT e.*, -(emb.embedding <#> %s::vector) as similarity
+                    FROM emails e
+                    JOIN email_embeddings emb ON e.uid = emb.email_uid AND e.folder = emb.email_folder
+                    WHERE {" AND ".join(conditions)}
+                    ORDER BY emb.embedding <#> %s::vector
+                    LIMIT %s
+                    """,
+                    tuple(params),
                 )
                 columns = [desc[0] for desc in cur.description]
                 return [dict(zip(columns, row)) for row in cur.fetchall()]

@@ -119,6 +119,14 @@ class EmbeddingsClient:
 
         return text
 
+    def _normalize(self, vec: list[float]) -> list[float]:
+        import math
+
+        norm = math.sqrt(sum(x * x for x in vec))
+        if norm == 0:
+            return vec
+        return [x / norm for x in vec]
+
     async def embed_text(self, text: str) -> EmbeddingResult:
         """Generate embedding for a single text.
 
@@ -228,6 +236,7 @@ class EmbeddingsClient:
 
         for i, embedding_item in enumerate(embeddings_data):
             embedding = embedding_item.get("embedding", [])
+            embedding = self._normalize(embedding)
             results.append(
                 EmbeddingResult(
                     text=filtered_texts[i],
@@ -447,6 +456,14 @@ class CohereEmbeddingsClient:
     def _estimate_tokens(self, texts: list[str]) -> int:
         return sum(len(t) // self.CHARS_PER_TOKEN + 1 for t in texts)
 
+    def _normalize(self, vec: list[float]) -> list[float]:
+        import math
+
+        norm = math.sqrt(sum(x * x for x in vec))
+        if norm == 0:
+            return vec
+        return [x / norm for x in vec]
+
     async def _wait_for_rate_limit(self, estimated_tokens: int) -> None:
         async with self._rate_limit_lock:
             now = time.monotonic()
@@ -565,10 +582,11 @@ class CohereEmbeddingsClient:
         embeddings = response.embeddings.float_ or []
         results = []
         for i, embedding in enumerate(embeddings):
+            vec = self._normalize(list(embedding))
             results.append(
                 EmbeddingResult(
                     text=filtered_texts[i],
-                    embedding=list(embedding),
+                    embedding=vec,
                     model=self.model,
                     content_hash=content_hashes[i],
                     tokens_used=0,
@@ -725,8 +743,7 @@ class GeminiEmbeddingsClient:
         results = []
         for i, embedding in enumerate(response.embeddings):
             vec = list(embedding.values)
-            if self.dimensions != 3072:
-                vec = self._normalize(vec)
+            vec = self._normalize(vec)
             results.append(
                 EmbeddingResult(
                     text=filtered_texts[i],

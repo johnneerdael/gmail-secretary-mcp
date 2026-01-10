@@ -125,19 +125,27 @@ def search_emails(query: str, folder: str, limit: int) -> list[dict]:
 def semantic_search(
     query_embedding: list[float], folder: str, limit: int, threshold: float = 0.5
 ) -> list[dict]:
+    """Semantic search using inner product on normalized vectors."""
     with get_conn() as conn:
         with conn.cursor(row_factory=dict_row) as cur:
             cur.execute(
                 """
                 SELECT e.uid, e.folder, e.from_addr, e.subject, 
                        LEFT(e.body_text, 200) as preview, e.date, e.is_unread,
-                       1 - (emb.embedding <=> %s::vector) as similarity
+                       -(emb.embedding <#> %s::vector) as similarity
                 FROM email_embeddings emb
                 JOIN emails e ON e.uid = emb.uid AND e.folder = emb.folder
-                WHERE e.folder = %s AND 1 - (emb.embedding <=> %s::vector) > %s
-                ORDER BY similarity DESC LIMIT %s
+                WHERE e.folder = %s AND -(emb.embedding <#> %s::vector) > %s
+                ORDER BY emb.embedding <#> %s::vector LIMIT %s
             """,
-                (query_embedding, folder, query_embedding, threshold, limit),
+                (
+                    query_embedding,
+                    folder,
+                    query_embedding,
+                    threshold,
+                    query_embedding,
+                    limit,
+                ),
             )
             return cur.fetchall()
 
@@ -219,8 +227,8 @@ def semantic_search_advanced(
     filters: dict,
     threshold: float = 0.5,
 ) -> list[dict]:
-    """Semantic search with advanced filters."""
-    conditions = ["e.folder = %s", "1 - (emb.embedding <=> %s::vector) > %s"]
+    """Semantic search with advanced metadata filters using inner product."""
+    conditions = ["e.folder = %s", "-(emb.embedding <#> %s::vector) > %s"]
     params: list = [folder, query_embedding, threshold]
 
     if filters.get("from_addr"):
@@ -243,16 +251,16 @@ def semantic_search_advanced(
         conditions.append("e.is_unread = %s")
         params.append(filters["is_unread"])
 
-    params.extend([query_embedding, limit])
+    params.extend([query_embedding, query_embedding, limit])
 
     sql = f"""
         SELECT e.uid, e.folder, e.from_addr, e.subject, 
                LEFT(e.body_text, 200) as preview, e.date, e.is_unread, e.has_attachments,
-               1 - (emb.embedding <=> %s::vector) as similarity
+               -(emb.embedding <#> %s::vector) as similarity
         FROM email_embeddings emb
         JOIN emails e ON e.uid = emb.uid AND e.folder = emb.folder
         WHERE {" AND ".join(conditions)}
-        ORDER BY similarity DESC LIMIT %s
+        ORDER BY emb.embedding <#> %s::vector LIMIT %s
     """
 
     with get_conn() as conn:
@@ -313,14 +321,14 @@ def find_related_emails(uid: int, folder: str, limit: int = 5) -> list[dict]:
                 """
                 SELECT e.uid, e.folder, e.from_addr, e.subject, 
                        LEFT(e.body_text, 150) as preview, e.date,
-                       1 - (emb.embedding <=> %s::vector) as similarity
+                       -(emb.embedding <#> %s::vector) as similarity
                 FROM email_embeddings emb
                 JOIN emails e ON e.uid = emb.uid AND e.folder = emb.folder
                 WHERE NOT (e.uid = %s AND e.folder = %s)
-                  AND 1 - (emb.embedding <=> %s::vector) > 0.6
-                ORDER BY similarity DESC LIMIT %s
+                  AND -(emb.embedding <#> %s::vector) > 0.6
+                ORDER BY emb.embedding <#> %s::vector LIMIT %s
             """,
-                (embedding, uid, folder, embedding, limit),
+                (embedding, uid, folder, embedding, embedding, limit),
             )
             return cur.fetchall()
 

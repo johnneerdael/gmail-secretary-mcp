@@ -2,29 +2,269 @@
 {% block title %}Calendar - Secretary{% endblock %}
 
 {% block content %}
-<div class="space-y-4">
-    <div class="flex items-center justify-between">
-        <h1 class="text-xl font-bold">Calendar</h1>
+<div class="space-y-4" x-data="{ 
+    showEventDetail: false, 
+    selectedEvent: null,
+    showSettings: false,
+    visibleCalendars: ['primary'],
+    secondaryTimezone: null,
+    showWorkingHours: true,
+    openEventDetail(event) {
+        this.selectedEvent = event;
+        this.showEventDetail = true;
+    },
+    toggleCalendar(calendarId) {
+        const index = this.visibleCalendars.indexOf(calendarId);
+        if (index > -1) {
+            this.visibleCalendars.splice(index, 1);
+        } else {
+            this.visibleCalendars.push(calendarId);
+        }
+    },
+    isWorkingHour(hour) {
+        return hour >= 11 && hour < 22;
+    }
+}">
+    <div class="flex items-center justify-between flex-wrap gap-4">
         <div class="flex items-center space-x-2">
-            <a href="/calendar?week_offset={{ week_offset - 1 }}" 
+            <h1 class="text-xl font-bold">Calendar</h1>
+            <div class="flex bg-gray-800 rounded-md overflow-hidden">
+                <a href="/calendar?view=week" 
+                   class="px-3 py-1 text-sm {% if view == 'week' %}bg-primary text-white{% else %}text-gray-400 hover:text-white{% endif %}">
+                    Week
+                </a>
+                <a href="/calendar?view=day" 
+                   class="px-3 py-1 text-sm {% if view == 'day' %}bg-primary text-white{% else %}text-gray-400 hover:text-white{% endif %}">
+                    Day
+                </a>
+                <a href="/calendar?view=month" 
+                   class="px-3 py-1 text-sm {% if view == 'month' %}bg-primary text-white{% else %}text-gray-400 hover:text-white{% endif %}">
+                    Month
+                </a>
+                <a href="/calendar?view=agenda" 
+                   class="px-3 py-1 text-sm {% if view == 'agenda' %}bg-primary text-white{% else %}text-gray-400 hover:text-white{% endif %}">
+                    Agenda
+                </a>
+            </div>
+            <button @click="showSettings = !showSettings" 
+                    class="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded"
+                    :class="{ 'bg-gray-800 text-primary': showSettings }"
+                    title="Calendar settings">
+                ⚙️
+            </button>
+        </div>
+        
+        <div class="flex items-center space-x-2">
+            {% if view == 'week' %}
+            <a href="/calendar?view=week&week_offset={{ week_offset - 1 }}" 
                class="px-3 py-1 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded">
                 ← Prev
             </a>
             <span class="text-sm text-gray-400">
                 {{ week_start.strftime('%b %d') }} - {{ week_end.strftime('%b %d, %Y') }}
             </span>
-            <a href="/calendar?week_offset={{ week_offset + 1 }}" 
+            <a href="/calendar?view=week&week_offset={{ week_offset + 1 }}" 
                class="px-3 py-1 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded">
                 Next →
             </a>
             {% if week_offset != 0 %}
-            <a href="/calendar" class="px-3 py-1 text-sm text-blue-400 hover:text-blue-300">
+            <a href="/calendar?view=week" class="px-3 py-1 text-sm text-blue-400 hover:text-blue-300">
                 Today
             </a>
+            {% endif %}
+            {% elif view == 'day' %}
+            <a href="/calendar?view=day&day_offset={{ day_offset - 1 }}" 
+               class="px-3 py-1 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded">
+                ← Prev
+            </a>
+            <span class="text-sm text-gray-400">
+                {{ target_day.strftime('%A, %B %d, %Y') }}
+            </span>
+            <a href="/calendar?view=day&day_offset={{ day_offset + 1 }}" 
+               class="px-3 py-1 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded">
+                Next →
+            </a>
+            {% if day_offset != 0 %}
+            <a href="/calendar?view=day" class="px-3 py-1 text-sm text-blue-400 hover:text-blue-300">
+                Today
+            </a>
+            {% endif %}
+            {% elif view == 'month' %}
+            <a href="/calendar?view=month&month_offset={{ month_offset - 1 }}" 
+               class="px-3 py-1 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded">
+                ← Prev
+            </a>
+            <span class="text-sm text-gray-400">
+                {{ month_name }}
+            </span>
+            <a href="/calendar?view=month&month_offset={{ month_offset + 1 }}" 
+               class="px-3 py-1 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded">
+                Next →
+            </a>
+            {% if month_offset != 0 %}
+            <a href="/calendar?view=month" class="px-3 py-1 text-sm text-blue-400 hover:text-blue-300">
+                This Month
+            </a>
+            {% endif %}
+            {% elif view == 'agenda' %}
+            <span class="text-sm text-gray-400">Next 30 days</span>
             {% endif %}
         </div>
     </div>
 
+    <div x-show="showSettings" x-cloak x-collapse class="bg-gray-900 border border-gray-800 rounded-lg p-4 space-y-4">
+        <div>
+            <h3 class="text-sm font-medium text-white mb-2">Calendars</h3>
+            <div class="space-y-2">
+                <label class="flex items-center space-x-2 cursor-pointer">
+                    <input type="checkbox" 
+                           x-model="visibleCalendars" 
+                           value="primary"
+                           class="rounded bg-gray-800 border-gray-700 text-primary focus:ring-primary">
+                    <span class="text-sm text-gray-300">Primary Calendar</span>
+                </label>
+            </div>
+        </div>
+        
+        <div>
+            <h3 class="text-sm font-medium text-white mb-2">Timezone</h3>
+            <div class="text-xs text-gray-400 mb-2">Primary: Europe/Amsterdam (CET/CEST)</div>
+            <select x-model="secondaryTimezone" 
+                    class="w-full bg-gray-800 text-white text-sm rounded px-3 py-2 border border-gray-700 focus:ring-1 focus:ring-primary">
+                <option value="">No secondary timezone</option>
+                <option value="America/New_York">New York (EST/EDT)</option>
+                <option value="America/Los_Angeles">Los Angeles (PST/PDT)</option>
+                <option value="Europe/London">London (GMT/BST)</option>
+                <option value="Asia/Tokyo">Tokyo (JST)</option>
+                <option value="Asia/Singapore">Singapore (SGT)</option>
+                <option value="Australia/Sydney">Sydney (AEDT/AEST)</option>
+            </select>
+        </div>
+        
+        <div>
+            <h3 class="text-sm font-medium text-white mb-2">Display</h3>
+            <label class="flex items-center space-x-2 cursor-pointer">
+                <input type="checkbox" 
+                       x-model="showWorkingHours"
+                       class="rounded bg-gray-800 border-gray-700 text-primary focus:ring-primary">
+                <span class="text-sm text-gray-300">Highlight working hours (11:00 - 22:00)</span>
+            </label>
+        </div>
+    </div>
+
+    {% if view == 'day' %}
+    <div class="bg-gray-900 rounded-lg overflow-hidden">
+        <div class="grid grid-cols-[80px_1fr]">
+            <div class="border-r border-gray-800"></div>
+            <div class="bg-gray-800 px-4 py-2 border-b border-gray-700">
+                <span class="text-sm font-medium text-white">{{ target_day.strftime('%A, %B %d') }}</span>
+            </div>
+            
+            {% for hour in range(24) %}
+            <div class="border-r border-gray-800 px-2 py-2 text-xs text-gray-500 text-right"
+                 :class="{ 'bg-blue-950/20': showWorkingHours && isWorkingHour({{ hour }}) }">
+                {{ '%02d:00'|format(hour) }}
+            </div>
+            <div class="border-t border-gray-800 min-h-[60px] relative"
+                 :class="{ 'bg-blue-950/10': showWorkingHours && isWorkingHour({{ hour }}) }">
+                {% for event in day_events %}
+                {% if event.start.dateTime %}
+                {% set event_hour = event.start.dateTime[11:13]|int %}
+                {% if event_hour == hour %}
+                <div class="absolute left-0 right-0 mx-1 mt-1 bg-primary/20 border-l-2 border-primary rounded p-2 text-xs cursor-pointer hover:bg-primary/30"
+                     @click="openEventDetail({{ event|tojson }})">
+                    <div class="font-medium text-white">{{ event.start.dateTime[11:16] }} {{ event.summary }}</div>
+                    {% if event.location %}
+                    <div class="text-gray-400 mt-1">📍 {{ event.location }}</div>
+                    {% endif %}
+                    <template x-if="busy_slots && busy_slots.length > 0">
+                        <div class="absolute inset-0 bg-red-500/10 pointer-events-none"></div>
+                    </template>
+                </div>
+                {% endif %}
+                {% endif %}
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    {% elif view == 'month' %}
+    <div class="bg-gray-900 rounded-lg overflow-hidden">
+        <div class="grid grid-cols-7 border-b border-gray-800">
+            {% for day_name in ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] %}
+            <div class="px-2 py-2 text-center text-xs font-medium text-gray-400">{{ day_name }}</div>
+            {% endfor %}
+        </div>
+        
+        {% for week in weeks %}
+        <div class="grid grid-cols-7 border-b border-gray-800">
+            {% for day in week %}
+            <div class="border-r border-gray-800 p-2 min-h-[100px] {% if not day.is_current_month %}bg-gray-950{% endif %} {% if day.is_today %}ring-1 ring-primary{% endif %}">
+                <div class="text-xs {% if day.is_today %}text-primary font-bold{% elif day.is_current_month %}text-gray-400{% else %}text-gray-600{% endif %} mb-1">
+                    {{ day.day_num }}
+                </div>
+                <div class="space-y-1">
+                    {% for event in day.events[:3] %}
+                    <div class="text-xs px-1 py-0.5 rounded bg-primary/20 text-primary truncate cursor-pointer hover:bg-primary/30"
+                         @click="openEventDetail({{ event|tojson }})">
+                        {{ event.start.dateTime[11:16] if event.start.dateTime else '' }} {{ event.summary }}
+                    </div>
+                    {% endfor %}
+                    {% if day.events|length > 3 %}
+                    <div class="text-xs text-gray-500">+{{ day.events|length - 3 }} more</div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+    </div>
+    
+    {% elif view == 'agenda' %}
+    <div class="space-y-4">
+        {% for date, events_list in grouped_events.items() %}
+        <div class="bg-gray-900 rounded-lg overflow-hidden">
+            <div class="bg-gray-800 px-4 py-2 border-b border-gray-700">
+                <span class="text-sm font-medium text-white">
+                    {{ events_list[0].start.dateTime[:10] | strftime('%A, %B %d, %Y') }}
+                </span>
+            </div>
+            <div class="divide-y divide-gray-800">
+                {% for event in events_list %}
+                <div class="px-4 py-3 hover:bg-gray-800 cursor-pointer"
+                     @click="openEventDetail({{ event|tojson }})">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                            <div class="font-medium text-white">{{ event.summary }}</div>
+                            {% if event.location %}
+                            <div class="text-sm text-gray-400 mt-1">📍 {{ event.location }}</div>
+                            {% endif %}
+                            {% if event.attendees %}
+                            <div class="text-sm text-gray-500 mt-1">{{ event.attendees|length }} attendees</div>
+                            {% endif %}
+                        </div>
+                        <div class="text-sm text-gray-400 ml-4">
+                            {% if event.start.dateTime %}
+                            {{ event.start.dateTime[11:16] }}
+                            {% if event.end.dateTime %}
+                            - {{ event.end.dateTime[11:16] }}
+                            {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% else %}
+        <div class="text-center py-12 text-gray-500">
+            No upcoming events in the next 30 days
+        </div>
+        {% endfor %}
+    </div>
+    
+    {% else %}
     <div class="grid grid-cols-7 gap-2">
         {% for day in days %}
         <div class="bg-gray-900 rounded-lg p-3 min-h-[200px] {% if day.is_today %}ring-1 ring-primary{% endif %}">
@@ -37,28 +277,13 @@
             <div class="space-y-1">
                 {% for event in day.events %}
                 <div class="text-xs p-2 rounded bg-gray-800 hover:bg-gray-700 cursor-pointer"
-                     x-data="{ expanded: false }"
-                     @click="expanded = !expanded">
+                     @click="openEventDetail({{ event|tojson }})">
                     <div class="flex items-start justify-between">
                         <span class="font-medium text-white truncate flex-1">{{ event.summary }}</span>
                         {% if event.start.dateTime %}
                         <span class="text-gray-500 ml-1">
                             {{ event.start.dateTime[11:16] }}
                         </span>
-                        {% endif %}
-                    </div>
-                    <div x-show="expanded" x-cloak class="mt-2 pt-2 border-t border-gray-700 space-y-1">
-                        {% if event.location %}
-                        <p class="text-gray-400">📍 {{ event.location }}</p>
-                        {% endif %}
-                        {% if event.hangoutLink %}
-                        <a href="{{ event.hangoutLink }}" target="_blank" 
-                           class="text-blue-400 hover:text-blue-300 block">
-                            🎥 Join Meet
-                        </a>
-                        {% endif %}
-                        {% if event.attendees %}
-                        <p class="text-gray-500">{{ event.attendees|length }} attendees</p>
                         {% endif %}
                     </div>
                 </div>
@@ -69,6 +294,7 @@
         </div>
         {% endfor %}
     </div>
+    {% endif %}
 
     <div class="flex justify-end">
         <button @click="$dispatch('open-create-event')"
@@ -76,6 +302,121 @@
             + New Event
         </button>
     </div>
+
+    <template x-if="showEventDetail && selectedEvent">
+        <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50" @click.self="showEventDetail = false">
+            <div class="bg-gray-900 rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+                <div class="flex items-center justify-between px-4 py-3 border-b border-gray-800 sticky top-0 bg-gray-900">
+                    <h2 class="text-lg font-semibold text-white" x-text="selectedEvent?.summary"></h2>
+                    <button @click="showEventDetail = false" class="text-gray-400 hover:text-white p-1">✕</button>
+                </div>
+                
+                <div class="p-4 space-y-4">
+                    <div x-show="selectedEvent?.start?.dateTime" class="flex items-start space-x-3">
+                        <span class="text-2xl">🕐</span>
+                        <div>
+                            <div class="text-sm text-gray-400">Time</div>
+                            <div class="text-white">
+                                <span x-text="selectedEvent?.start?.dateTime ? new Date(selectedEvent.start.dateTime).toLocaleString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : ''"></span>
+                            </div>
+                            <div class="text-white mt-1">
+                                <span x-text="selectedEvent?.start?.dateTime ? selectedEvent.start.dateTime.substring(11, 16) : ''"></span>
+                                <span x-show="selectedEvent?.end?.dateTime"> - </span>
+                                <span x-text="selectedEvent?.end?.dateTime ? selectedEvent.end.dateTime.substring(11, 16) : ''"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div x-show="selectedEvent?.description" class="flex items-start space-x-3">
+                        <span class="text-2xl">📝</span>
+                        <div class="flex-1">
+                            <div class="text-sm text-gray-400">Description</div>
+                            <div class="text-white whitespace-pre-wrap" x-text="selectedEvent?.description"></div>
+                        </div>
+                    </div>
+                    
+                    <div x-show="selectedEvent?.location" class="flex items-start space-x-3">
+                        <span class="text-2xl">📍</span>
+                        <div class="flex-1">
+                            <div class="text-sm text-gray-400">Location</div>
+                            <div class="text-white" x-text="selectedEvent?.location"></div>
+                        </div>
+                    </div>
+                    
+                    <div x-show="selectedEvent?.hangoutLink" class="flex items-start space-x-3">
+                        <span class="text-2xl">🎥</span>
+                        <div class="flex-1">
+                            <div class="text-sm text-gray-400">Video Conference</div>
+                            <a :href="selectedEvent?.hangoutLink" target="_blank" 
+                               class="text-blue-400 hover:text-blue-300 underline">
+                                Join Google Meet
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div x-show="selectedEvent?.attendees && selectedEvent.attendees.length > 0" class="flex items-start space-x-3">
+                        <span class="text-2xl">👥</span>
+                        <div class="flex-1">
+                            <div class="text-sm text-gray-400 mb-2">
+                                Attendees (<span x-text="selectedEvent?.attendees?.length || 0"></span>)
+                            </div>
+                            <div class="space-y-2">
+                                <template x-for="attendee in selectedEvent?.attendees || []" :key="attendee.email">
+                                    <div class="flex items-center justify-between text-sm">
+                                        <div>
+                                            <span class="text-white" x-text="attendee.displayName || attendee.email"></span>
+                                            <span class="text-gray-500" x-show="attendee.displayName"> 
+                                                (<span x-text="attendee.email"></span>)
+                                            </span>
+                                        </div>
+                                        <span class="text-xs px-2 py-1 rounded"
+                                              :class="{
+                                                  'bg-green-900/30 text-green-400': attendee.responseStatus === 'accepted',
+                                                  'bg-red-900/30 text-red-400': attendee.responseStatus === 'declined',
+                                                  'bg-yellow-900/30 text-yellow-400': attendee.responseStatus === 'tentative',
+                                                  'bg-gray-800 text-gray-400': attendee.responseStatus === 'needsAction'
+                                              }"
+                                              x-text="attendee.responseStatus === 'accepted' ? 'Accepted' : 
+                                                      attendee.responseStatus === 'declined' ? 'Declined' : 
+                                                      attendee.responseStatus === 'tentative' ? 'Maybe' : 'No response'">
+                                        </span>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div x-show="selectedEvent?.organizer" class="flex items-start space-x-3">
+                        <span class="text-2xl">👤</span>
+                        <div class="flex-1">
+                            <div class="text-sm text-gray-400">Organizer</div>
+                            <div class="text-white">
+                                <span x-text="selectedEvent?.organizer?.displayName || selectedEvent?.organizer?.email"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div x-show="selectedEvent?.htmlLink" class="flex items-start space-x-3">
+                        <span class="text-2xl">🔗</span>
+                        <div class="flex-1">
+                            <div class="text-sm text-gray-400">Calendar Link</div>
+                            <a :href="selectedEvent?.htmlLink" target="_blank" 
+                               class="text-blue-400 hover:text-blue-300 underline text-sm">
+                                View in Google Calendar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex justify-end space-x-2 px-4 py-3 border-t border-gray-800 bg-gray-900 sticky bottom-0">
+                    <button @click="showEventDetail = false"
+                            class="px-4 py-2 text-sm text-gray-300 hover:text-white">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </template>
 </div>
 
 <div x-data="{ open: false }" 

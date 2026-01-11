@@ -16,15 +16,37 @@ templates = Jinja2Templates(directory=str(Path(__file__).parent.parent / "templa
 @router.get("/calendar", response_class=HTMLResponse)
 async def calendar_view(
     request: Request,
+    view: str = Query("week"),
     week_offset: int = Query(0),
+    day_offset: int = Query(0),
+    month_offset: int = Query(0),
     session: Session = Depends(require_auth),
 ):
     now = datetime.now()
-    week_start = now - timedelta(days=now.weekday()) + timedelta(weeks=week_offset)
-    week_end = week_start + timedelta(days=7)
 
-    time_min = week_start.strftime("%Y-%m-%dT00:00:00Z")
-    time_max = week_end.strftime("%Y-%m-%dT23:59:59Z")
+    week_start = None
+    week_end = None
+
+    if view == "day":
+        target_day = now + timedelta(days=day_offset)
+        time_min = target_day.strftime("%Y-%m-%dT00:00:00Z")
+        time_max = target_day.strftime("%Y-%m-%dT23:59:59Z")
+    elif view == "month":
+        target_month = now.replace(day=1) + timedelta(days=32 * month_offset)
+        target_month = target_month.replace(day=1)
+        month_start = target_month
+        next_month = (target_month.replace(day=28) + timedelta(days=4)).replace(day=1)
+        month_end = next_month - timedelta(seconds=1)
+        time_min = month_start.strftime("%Y-%m-%dT00:00:00Z")
+        time_max = month_end.strftime("%Y-%m-%dT23:59:59Z")
+    elif view == "agenda":
+        time_min = now.strftime("%Y-%m-%dT00:00:00Z")
+        time_max = (now + timedelta(days=30)).strftime("%Y-%m-%dT23:59:59Z")
+    else:
+        week_start = now - timedelta(days=now.weekday()) + timedelta(weeks=week_offset)
+        week_end = week_start + timedelta(days=7)
+        time_min = week_start.strftime("%Y-%m-%dT00:00:00Z")
+        time_max = week_end.strftime("%Y-%m-%dT23:59:59Z")
 
     try:
         events_response = await engine.get_calendar_events(time_min, time_max)
@@ -40,37 +62,119 @@ async def calendar_view(
     except Exception:
         busy_slots = []
 
-    days = []
-    for i in range(7):
-        day = week_start + timedelta(days=i)
+    context = {
+        "request": request,
+        "view": view,
+        "events": events,
+        "busy_slots": busy_slots,
+        "now": now,
+    }
+
+    if view == "day":
+        target_day = now + timedelta(days=day_offset)
         day_events = [
             e
             for e in events
             if e.get("start", {})
             .get("dateTime", "")
-            .startswith(day.strftime("%Y-%m-%d"))
+            .startswith(target_day.strftime("%Y-%m-%d"))
         ]
-        days.append(
+        context.update(
             {
-                "date": day,
-                "name": day.strftime("%A"),
-                "short": day.strftime("%b %d"),
-                "events": day_events,
-                "is_today": day.date() == now.date(),
+                "target_day": target_day,
+                "day_offset": day_offset,
+                "day_events": day_events,
+            }
+        )
+    elif view == "month":
+        target_month = now.replace(day=1) + timedelta(days=32 * month_offset)
+        target_month = target_month.replace(day=1)
+        month_start = target_month
+        month_name = target_month.strftime("%B %Y")
+
+        first_weekday = month_start.weekday()
+        calendar_start = month_start - timedelta(days=first_weekday)
+
+        weeks = []
+        current = calendar_start
+        for week in range(6):
+            week_days = []
+            for day in range(7):
+                day_date = current + timedelta(days=week * 7 + day)
+                day_events = [
+                    e
+                    for e in events
+                    if e.get("start", {})
+                    .get("dateTime", "")
+                    .startswith(day_date.strftime("%Y-%m-%d"))
+                ]
+                week_days.append(
+                    {
+                        "date": day_date,
+                        "day_num": day_date.day,
+                        "is_current_month": day_date.month == target_month.month,
+                        "is_today": day_date.date() == now.date(),
+                        "events": day_events,
+                    }
+                )
+            weeks.append(week_days)
+
+        context.update(
+            {
+                "month_offset": month_offset,
+                "month_name": month_name,
+                "weeks": weeks,
+            }
+        )
+    elif view == "agenda":
+        sorted_events = sorted(
+            events, key=lambda e: e.get("start", {}).get("dateTime", "")
+        )
+        grouped_events = {}
+        for event in sorted_events:
+            event_date = event.get("start", {}).get("dateTime", "")[:10]
+            if event_date not in grouped_events:
+                grouped_events[event_date] = []
+            grouped_events[event_date].append(event)
+
+        context.update(
+            {
+                "grouped_events": grouped_events,
+            }
+        )
+    else:
+        week_start = now - timedelta(days=now.weekday()) + timedelta(weeks=week_offset)
+        week_end = week_start + timedelta(days=7)
+        days = []
+        for i in range(7):
+            day = week_start + timedelta(days=i)
+            day_events = [
+                e
+                for e in events
+                if e.get("start", {})
+                .get("dateTime", "")
+                .startswith(day.strftime("%Y-%m-%d"))
+            ]
+            days.append(
+                {
+                    "date": day,
+                    "name": day.strftime("%A"),
+                    "short": day.strftime("%b %d"),
+                    "events": day_events,
+                    "is_today": day.date() == now.date(),
+                }
+            )
+
+        context.update(
+            {
+                "days": days,
+                "week_start": week_start,
+                "week_end": week_end,
+                "week_offset": week_offset,
             }
         )
 
-    return templates.TemplateResponse(
-        "calendar.html",
-        {
-            "request": request,
-            "days": days,
-            "week_start": week_start,
-            "week_end": week_end,
-            "week_offset": week_offset,
-            "busy_slots": busy_slots,
-        },
-    )
+    return templates.TemplateResponse("calendar.html", context)
 
 
 @router.get("/calendar/availability", response_class=HTMLResponse)

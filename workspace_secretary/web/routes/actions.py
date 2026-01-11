@@ -29,6 +29,33 @@ async def move_email(
     session: Session = Depends(require_auth),
 ):
     result = await engine.move_email(uid, folder, destination)
+
+    # If moving to trash, provide an undo action
+    if "Trash" in destination and result.get("success"):
+        # The 'folder' for the undo action is the current destination (trash)
+        # The 'destination' for the undo action is the original folder
+        # We need to URL-encode slashes in folder names for the path part
+        encoded_dest = destination.replace("/", "%2F")
+        encoded_folder = folder.replace("/", "%2F")
+        undo_url = f"/api/email/move/{encoded_dest}/{uid}?destination={encoded_folder}"
+
+        return JSONResponse(
+            {
+                "success": True,
+                "undo_message": "Moved to Trash",
+                "undo_action": {"url": undo_url},
+            }
+        )
+
+    # For other moves, just return the standard message if there is one
+    if result.get("success"):
+        return JSONResponse(
+            {
+                "success": True,
+                "message": result.get("message", "Email moved successfully."),
+            }
+        )
+
     return JSONResponse(result)
 
 

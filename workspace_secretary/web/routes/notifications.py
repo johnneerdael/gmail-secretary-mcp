@@ -2,10 +2,10 @@ from fastapi import APIRouter, Request, Depends
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional
 
-from workspace_secretary.web import database as db
+from workspace_secretary.web import database as db, engine_client as engine
 from workspace_secretary.web.auth import require_auth, Session
 
 router = APIRouter()
@@ -19,7 +19,7 @@ _last_check: dict[str, datetime] = {}
 async def check_notifications(
     request: Request, session: Session = Depends(require_auth)
 ):
-    """Check for new priority emails since last check."""
+    """Check for new priority emails and upcoming calendar reminders since last check."""
     session_id = request.cookies.get("session_id", "default")
     last_check = _last_check.get(session_id)
     now = datetime.now()
@@ -32,12 +32,66 @@ async def check_notifications(
         return JSONResponse(
             {
                 "new_emails": [],
+                "calendar_reminders": [],
                 "count": 0,
             }
         )
 
     # Get new priority emails since last check
     new_emails = db.get_new_priority_emails(since=last_check)
+
+    # Get upcoming calendar events in the next hour for reminders
+    time_min = now.strftime("%Y-%m-%dT%H:%M:%SZ")
+    time_max = (now + timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    calendar_reminders = []
+    try:
+        response = await engine.get_calendar_events(
+            time_min=time_min, time_max=time_max
+        )
+
+        if response.get("status") == "ok" and "events" in response:
+            for event in response["events"]:
+                # Parse event start time
+                start = event.get("start", {})
+                if isinstance(start, dict):
+                    start_time = start.get("dateTime") or start.get("date")
+                else:
+                    start_time = str(start) if start else None
+
+                if not start_time:
+                    continue
+
+                # Parse event start datetime
+                try:
+                    event_start = datetime.fromisoformat(
+                        start_time.replace("Z", "+00:00")
+                    )
+                    # Only remind about events starting within 30 minutes
+                    if (event_start - now).total_seconds() <= 1800:
+                        calendar_reminders.append(
+                            {
+                                "id": event.get("id"),
+                                "summary": event.get("summary", "Untitled Event"),
+                                "start": start_time,
+                                "location": event.get("location", ""),
+                            }
+                        )
+                except (ValueError, TypeError, AttributeError):
+                    continue
+    except Exception as e:
+        # Don't fail notifications if calendar check fails
+        pass
+
+    def format_date(date_val):
+        if not date_val:
+            return None
+        try:
+            if isinstance(date_val, datetime):
+                return date_val.isoformat()
+            return str(date_val)
+        except Exception:
+            return None
 
     return JSONResponse(
         {
@@ -48,11 +102,12 @@ async def check_notifications(
                     "from": e.get("from_addr", "Unknown"),
                     "subject": e.get("subject", "(no subject)"),
                     "preview": (e.get("preview") or "")[:100],
-                    "date": e.get("date").isoformat() if e.get("date") else None,
+                    "date": format_date(e.get("date")),
                 }
                 for e in new_emails
             ],
-            "count": len(new_emails),
+            "calendar_reminders": calendar_reminders,
+            "count": len(new_emails) + len(calendar_reminders),
         }
     )
 

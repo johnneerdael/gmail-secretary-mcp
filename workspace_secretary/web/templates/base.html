@@ -27,46 +27,7 @@
         .search-highlight { background-color: #fbbf24; color: #000; padding: 2px 0; }
         .search-highlight.current-match { background-color: #f97316; color: #fff; }
     </style>
-    <script>
-        window.toastContainer = null;
-        window.showToast = function(message, type = 'info', duration = 5000, onUndo = null) {
-            if (!window.toastContainer) {
-                window.toastContainer = document.createElement('div');
-                window.toastContainer.className = 'fixed bottom-4 right-4 z-50 space-y-2';
-                document.body.appendChild(window.toastContainer);
-            }
-            
-            const toast = document.createElement('div');
-            const colors = {
-                success: 'bg-green-900 border-green-700 text-green-200',
-                error: 'bg-red-900 border-red-700 text-red-200',
-                info: 'bg-blue-900 border-blue-700 text-blue-200',
-                warning: 'bg-yellow-900 border-yellow-700 text-yellow-200'
-            };
-            
-            toast.className = `${colors[type]} border rounded-lg px-4 py-3 shadow-lg flex items-center gap-3 min-w-[300px]`;
-            toast.innerHTML = `
-                <span class="flex-1">${message}</span>
-                ${onUndo ? '<button class="px-2 py-1 text-sm bg-white/20 hover:bg-white/30 rounded">Undo</button>' : ''}
-                <button class="text-xl leading-none hover:opacity-70">×</button>
-            `;
-            
-            if (onUndo) {
-                toast.querySelector('button:first-of-type').onclick = () => {
-                    onUndo();
-                    toast.remove();
-                };
-            }
-            
-            toast.querySelector('button:last-of-type').onclick = () => toast.remove();
-            
-            window.toastContainer.appendChild(toast);
-            
-            if (duration > 0) {
-                setTimeout(() => toast.remove(), duration);
-            }
-        };
-    </script>
+
 </head>
 <body class="h-full bg-gray-950 text-gray-100" x-data="{ darkMode: {% if theme == 'system' %}localStorage.getItem('darkMode') !== 'false'{% elif theme == 'dark' %}true{% else %}false{% endif %} }" x-init="if(!darkMode) document.documentElement.classList.remove('dark'); else document.documentElement.classList.add('dark')" :class="{ 'bg-gray-50 text-gray-900': !darkMode, 'bg-gray-950 text-gray-100': darkMode }">
     <div class="min-h-full">
@@ -124,15 +85,34 @@
                                             No new notifications
                                         </div>
                                     </template>
-                                    <template x-for="n in notifications" :key="n.uid">
-                                        <a :href="'/thread/' + n.folder + '/' + n.uid" 
-                                           class="block px-4 py-3 hover:bg-gray-700 border-b border-gray-700/50">
-                                            <div class="flex items-center justify-between mb-1">
-                                                <span class="text-sm font-medium text-white truncate" x-text="n.from"></span>
-                                                <span class="text-xs text-gray-500" x-text="formatTime(n.date)"></span>
-                                            </div>
-                                            <p class="text-sm text-gray-400 truncate" x-text="n.subject"></p>
-                                        </a>
+                                    <template x-for="n in notifications" :key="n.uid || n.id">
+                                        <div>
+                                            <!-- Email notification -->
+                                            <template x-if="n.type === 'email'">
+                                                <a :href="'/thread/' + n.folder + '/' + n.uid"
+                                                   class="block px-4 py-3 hover:bg-gray-700 border-b border-gray-700/50">
+                                                    <div class="flex items-center justify-between mb-1">
+                                                        <span class="text-sm font-medium text-white truncate" x-text="n.from"></span>
+                                                        <span class="text-xs text-gray-500" x-text="formatTime(n.date)"></span>
+                                                    </div>
+                                                    <p class="text-sm text-gray-400 truncate" x-text="n.subject"></p>
+                                                </a>
+                                            </template>
+                                            <!-- Calendar reminder notification -->
+                                            <template x-if="n.type === 'calendar'">
+                                                <a href="/calendar"
+                                                   class="block px-4 py-3 hover:bg-gray-700 border-b border-gray-700/50 bg-purple-900/20">
+                                                    <div class="flex items-start gap-2">
+                                                        <span class="text-lg">📅</span>
+                                                        <div class="flex-1 min-w-0">
+                                                            <p class="text-sm font-medium text-white truncate" x-text="n.summary"></p>
+                                                            <p class="text-xs text-purple-300" x-text="formatTime(n.start)"></p>
+                                                            <p class="text-xs text-gray-500 truncate" x-show="n.location" x-text="n.location"></p>
+                                                        </div>
+                                                    </div>
+                                                </a>
+                                            </template>
+                                        </div>
                                     </template>
                                 </div>
                             </div>
@@ -155,108 +135,131 @@
 
     <div id="loading" class="htmx-indicator fixed top-0 left-0 right-0 h-1 bg-primary animate-pulse"></div>
     
-    <div id="toast-container" class="fixed bottom-4 right-4 z-50 space-y-2"></div>
+    <div id="global-error-banner" x-data="{ show: false, message: '' }"
+         x-show="show"
+         x-cloak
+         @show-error.window="show = true; message = $event.detail.message; setTimeout(() => show = false, 8000)"
+         class="fixed top-0 left-0 right-0 z-[100] bg-red-800 border-b border-red-600 text-white text-center p-2 flex items-center justify-center">
+        <span x-text="message"></span>
+        <button @click="show = false" class="ml-4 text-xl leading-none hover:opacity-70">&times;</button>
+    </div>
+
+    <div id="toast-container" class="fixed bottom-4 right-4 z-[90] space-y-2"></div>
     
     <script>
-        // Global toast notification function
-        window.showToast = function(message, type = 'info', duration = 3000) {
+        // Consolidated Toast Notification System
+        window.showToast = function({ message, type = 'info', duration = 5000, onUndo = null }) {
             const container = document.getElementById('toast-container');
+            if (!container) return;
+
             const toast = document.createElement('div');
-            
+            const toastId = 'toast-' + Date.now();
+            toast.id = toastId;
+
             const colors = {
-                success: 'bg-green-600',
-                error: 'bg-red-600',
-                info: 'bg-blue-600',
-                warning: 'bg-yellow-600'
+                success: 'bg-green-900 border-green-700 text-green-200',
+                error: 'bg-red-900 border-red-700 text-red-200',
+                info: 'bg-blue-900 border-blue-700 text-blue-200',
+                warning: 'bg-yellow-900 border-yellow-700 text-yellow-200'
             };
+
+            toast.className = `${colors[type]} border rounded-lg px-4 py-3 shadow-lg flex items-center gap-3 min-w-[300px] max-w-md transform transition-all duration-300 translate-x-full`;
             
-            toast.className = `${colors[type] || colors.info} text-white px-4 py-3 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full`;
-            toast.textContent = message;
+            let undoButton = '';
+            if (onUndo) {
+                undoButton = `<button class="px-2 py-1 text-sm bg-white/20 hover:bg-white/30 rounded font-semibold">Undo</button>`;
+            }
+
+            toast.innerHTML = `
+                <span class="flex-1">${message}</span>
+                ${undoButton}
+                <button class="text-xl leading-none hover:opacity-70">&times;</button>
+            `;
+
             container.appendChild(toast);
-            
+
             // Animate in
             requestAnimationFrame(() => {
                 toast.classList.remove('translate-x-full');
             });
-            
-            // Auto-dismiss
-            setTimeout(() => {
+
+            const closeButton = toast.querySelector('button:last-of-type');
+            const removeToast = () => {
                 toast.classList.add('translate-x-full', 'opacity-0');
                 setTimeout(() => toast.remove(), 300);
-            }, duration);
+            };
+            closeButton.onclick = removeToast;
+
+            let timeoutId = null;
+            if (duration > 0) {
+                timeoutId = setTimeout(removeToast, duration);
+            }
+
+            if (onUndo) {
+                const undoBtn = toast.querySelector('button:first-of-type');
+                undoBtn.onclick = () => {
+                    clearTimeout(timeoutId); // Stop the auto-dismiss
+                    onUndo();
+                    // The onUndo function is now responsible for showing any confirmation toast
+                    removeToast();
+                };
+            }
         };
-        
-        // HTMX event handlers for showing toasts on action completion
+
+        // Global Error Handling
+        window.addEventListener('unhandledrejection', function (event) {
+            console.error('Unhandled Promise Rejection:', event.reason);
+            const message = event.reason?.message || 'An unexpected error occurred.';
+            window.dispatchEvent(new CustomEvent('show-error', { detail: { message: `System Error: ${message}` } }));
+        });
+
+        // HTMX Event Listeners
+        document.body.addEventListener('htmx:responseError', function(event) {
+            const errorDetail = event.detail.xhr;
+            let message = 'Action failed. Please try again.';
+            if (errorDetail.status === 0) {
+                message = 'Network error. Could not connect to the server.';
+                window.dispatchEvent(new CustomEvent('show-error', { detail: { message } }));
+            } else {
+                 try {
+                    const response = JSON.parse(errorDetail.responseText);
+                    message = response.detail || response.message || message;
+                } catch (e) { /* Ignore if not JSON */ }
+                showToast({ message, type: 'error' });
+            }
+        });
+
         document.body.addEventListener('htmx:afterRequest', function(event) {
             const xhr = event.detail.xhr;
             if (xhr && xhr.status >= 200 && xhr.status < 300) {
-                // Check if response has a message
                 try {
                     const response = JSON.parse(xhr.responseText);
+                    
+                    // Standard success message
                     if (response.message) {
-                        window.showToast(response.message, response.success ? 'success' : 'error');
+                        showToast({ message: response.message, type: response.success ? 'success' : 'info' });
                     }
-                } catch (e) {
-                    // Not JSON, ignore
-                }
+                    
+                    // Special handling for undoable actions
+                    if (response.undo_action) {
+                        showToast({
+                            message: response.undo_message || 'Action completed.',
+                            type: 'info',
+                            duration: 7000, // Longer duration for undo
+                            onUndo: () => {
+                                htmx.ajax('POST', response.undo_action.url, {
+                                    target: response.undo_action.target,
+                                    swap: response.undo_action.swap || 'outerHTML'
+                                }).then(() => {
+                                    showToast({ message: 'Action undone', type: 'success' });
+                                });
+                            }
+                        });
+                    }
+
+                } catch (e) { /* Not JSON, ignore */ }
             }
         });
-        
-        document.body.addEventListener('htmx:responseError', function(event) {
-            window.showToast('Action failed. Please try again.', 'error');
-        });
-        
-        // Undo toast for delete operations
-        window.showUndoToast = function(message, uid, fromFolder, toFolder) {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            
-            toast.className = 'bg-gray-800 text-white px-4 py-3 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full flex items-center justify-between space-x-4';
-            toast.innerHTML = `
-                <span>${message}</span>
-                <button class="text-blue-400 hover:text-blue-300 font-medium underline" onclick="window.undoDelete('${uid}', '${toFolder}', '${fromFolder}', this.closest('div'))">
-                    Undo
-                </button>
-            `;
-            container.appendChild(toast);
-            
-            // Animate in
-            requestAnimationFrame(() => {
-                toast.classList.remove('translate-x-full');
-            });
-            
-            // Auto-dismiss after 5 seconds (longer for undo)
-            const timeout = setTimeout(() => {
-                toast.classList.add('translate-x-full', 'opacity-0');
-                setTimeout(() => {
-                    toast.remove();
-                    window.location.href = '/inbox';
-                }, 300);
-            }, 5000);
-            
-            toast.dataset.timeout = timeout;
-        };
-        
-        // Undo delete by moving back to original folder
-        window.undoDelete = async function(uid, fromFolder, toFolder, toastEl) {
-            clearTimeout(parseInt(toastEl.dataset.timeout));
-            
-            try {
-                const response = await fetch(`/api/email/move/${encodeURIComponent(fromFolder)}/${uid}?destination=${encodeURIComponent(toFolder)}`, {
-                    method: 'POST'
-                });
-                
-                if (response.ok) {
-                    window.showToast('Undo successful', 'success');
-                    toastEl.remove();
-                    // Stay on current page instead of redirecting
-                } else {
-                    window.showToast('Undo failed', 'error');
-                }
-            } catch (e) {
-                window.showToast('Undo failed', 'error');
-            }
-        };
         
         function notificationBell() {
             return {
@@ -288,17 +291,45 @@
                     try {
                         const response = await fetch('/api/notifications/check');
                         const data = await response.json();
-                        
+
+                        // Process new emails
                         if (data.new_emails && data.new_emails.length > 0) {
-                            this.notifications = [...data.new_emails, ...this.notifications].slice(0, 20);
+                            this.notifications = [
+                                ...data.new_emails.map(e => ({ ...e, type: 'email' })),
+                                ...this.notifications
+                            ].slice(0, 20);
                             this.unreadCount = data.count;
-                            
+
                             if (this.notificationsEnabled && data.new_emails.length > 0) {
                                 const email = data.new_emails[0];
                                 new Notification('New Email', {
                                     body: `${email.from}: ${email.subject}`,
                                     icon: '/static/icon.png',
                                     tag: 'email-' + email.uid
+                                });
+                            }
+                        }
+
+                        // Process calendar reminders
+                        if (data.calendar_reminders && data.calendar_reminders.length > 0) {
+                            const reminders = data.calendar_reminders.map(r => ({
+                                type: 'calendar',
+                                id: r.id,
+                                summary: r.summary,
+                                start: r.start,
+                                location: r.location
+                            }));
+
+                            this.notifications = [...reminders, ...this.notifications].slice(0, 20);
+                            this.unreadCount = data.count;
+
+                            if (this.notificationsEnabled) {
+                                reminders.forEach(r => {
+                                    new Notification('Upcoming Event', {
+                                        body: `${r.summary}${r.location ? ' - ' + r.location : ''}`,
+                                        icon: '/static/icon.png',
+                                        tag: 'calendar-' + r.id
+                                    });
                                 });
                             }
                         }

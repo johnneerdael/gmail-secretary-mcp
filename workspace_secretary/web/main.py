@@ -24,6 +24,7 @@ def main():
         actions,
         compose,
         calendar,
+        contacts,
         analysis,
         dashboard,
         chat,
@@ -50,6 +51,7 @@ def main():
     web_app.include_router(actions.router)
     web_app.include_router(compose.router)
     web_app.include_router(calendar.router)
+    web_app.include_router(contacts.router)
     web_app.include_router(analysis.router)
     web_app.include_router(chat.router)
     web_app.include_router(settings.router)

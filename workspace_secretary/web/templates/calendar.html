@@ -72,6 +72,9 @@
                 Today
             </a>
             {% endif %}
+            <a href="/calendar/find-time" class="px-3 py-1 text-sm bg-primary text-white rounded hover:bg-primary/90 ml-2">
+                🔍 Find a Time
+            </a>
             {% elif view == 'day' %}
             <a href="/calendar?view=day&day_offset={{ day_offset - 1 }}" 
                class="px-3 py-1 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded">
@@ -399,99 +402,141 @@
                     <div x-show="selectedEvent?.htmlLink" class="flex items-start space-x-3">
                         <span class="text-2xl">🔗</span>
                         <div class="flex-1">
-                            <div class="text-sm text-gray-400">Calendar Link</div>
-                            <a :href="selectedEvent?.htmlLink" target="_blank" 
-                               class="text-blue-400 hover:text-blue-300 underline text-sm">
-                                View in Google Calendar
-                            </a>
-                        </div>
+                    <div class="text-sm text-gray-400">Calendar Link</div>
+                    <a :href="selectedEvent?.htmlLink" target="_blank" 
+                       class="text-blue-400 hover:text-blue-300 underline text-sm">
+                        View in Google Calendar
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="flex justify-between space-x-2 px-4 py-3 border-t border-gray-800 bg-gray-900 sticky bottom-0">
+            <button @click="$dispatch('propose-times', { event: selectedEvent })"
+                    class="px-4 py-2 text-sm bg-gray-800 text-white rounded hover:bg-gray-700">
+                📅 Propose New Times
+            </button>
+            <button @click="showEventDetail = false"
+                    class="px-4 py-2 text-sm text-gray-300 hover:text-white">
+                Close
+            </button>
+        </div>
+    </div>
+</template>
+
+<template x-if="$store.proposeTimesEvent">
+    <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50" 
+         @click.self="$store.proposeTimesEvent = null"
+         x-data="{
+             proposedSlots: [],
+             message: '',
+             async proposeAlternatives() {
+                 const formData = new FormData();
+                 formData.append('event_id', $store.proposeTimesEvent.id);
+                 formData.append('proposed_times', JSON.stringify(proposedSlots));
+                 formData.append('message', message);
+                 
+                 try {
+                     const response = await fetch('/api/calendar/propose-times', {
+                         method: 'POST',
+                         body: formData
+                     });
+                     const data = await response.json();
+                     
+                     if (data.success) {
+                         window.showToast('Alternative times proposed', 'success');
+                         $store.proposeTimesEvent = null;
+                     } else {
+                         window.showToast(data.error || 'Failed to propose times', 'error');
+                     }
+                 } catch (error) {
+                     window.showToast('Error proposing times', 'error');
+                 }
+             },
+             addSlot() {
+                 const now = new Date();
+                 proposedSlots.push({
+                     start: now.toISOString().slice(0, 16),
+                     end: new Date(now.getTime() + 30 * 60000).toISOString().slice(0, 16)
+                 });
+             },
+             removeSlot(index) {
+                 proposedSlots.splice(index, 1);
+             }
+         }"
+         x-init="addSlot()"
+         @propose-times.window="$store.proposeTimesEvent = $event.detail.event">
+        <div class="bg-gray-900 rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between px-4 py-3 border-b border-gray-800 sticky top-0 bg-gray-900">
+                <h2 class="text-lg font-semibold text-white">Propose Alternative Times</h2>
+                <button @click="$store.proposeTimesEvent = null" class="text-gray-400 hover:text-white p-1">✕</button>
+            </div>
+            
+            <div class="p-4 space-y-4">
+                <div class="bg-gray-800 rounded-lg p-3">
+                    <div class="text-sm text-gray-400">Current Event</div>
+                    <div class="text-white font-medium" x-text="$store.proposeTimesEvent?.summary"></div>
+                    <div class="text-sm text-gray-400 mt-1">
+                        <span x-text="$store.proposeTimesEvent?.start?.dateTime ? new Date($store.proposeTimesEvent.start.dateTime).toLocaleString() : ''"></span>
                     </div>
                 </div>
                 
-                <div class="flex justify-end space-x-2 px-4 py-3 border-t border-gray-800 bg-gray-900 sticky bottom-0">
-                    <button @click="showEventDetail = false"
-                            class="px-4 py-2 text-sm text-gray-300 hover:text-white">
-                        Close
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">
+                        Proposed Alternative Times
+                    </label>
+                    <div class="space-y-3">
+                        <template x-for="(slot, index) in proposedSlots" :key="index">
+                            <div class="flex items-center gap-2">
+                                <input type="datetime-local" 
+                                       x-model="slot.start"
+                                       class="flex-1 bg-gray-800 text-white text-sm rounded px-3 py-2 border border-gray-700">
+                                <span class="text-gray-500">to</span>
+                                <input type="datetime-local" 
+                                       x-model="slot.end"
+                                       class="flex-1 bg-gray-800 text-white text-sm rounded px-3 py-2 border border-gray-700">
+                                <button @click="removeSlot(index)" 
+                                        class="p-2 text-red-400 hover:text-red-300">
+                                    ✕
+                                </button>
+                            </div>
+                        </template>
+                    </div>
+                    <button @click="addSlot()" 
+                            class="mt-2 px-3 py-1 text-sm text-blue-400 hover:text-blue-300">
+                        + Add Another Time Slot
                     </button>
                 </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">
+                        Message (optional)
+                    </label>
+                    <textarea x-model="message"
+                              rows="3"
+                              placeholder="Let attendees know why you're proposing new times..."
+                              class="w-full bg-gray-800 text-white text-sm rounded px-3 py-2 border border-gray-700 focus:ring-2 focus:ring-primary focus:border-transparent"></textarea>
+                </div>
+            </div>
+            
+            <div class="flex justify-end space-x-2 px-4 py-3 border-t border-gray-800 bg-gray-900 sticky bottom-0">
+                <button @click="$store.proposeTimesEvent = null"
+                        class="px-4 py-2 text-sm text-gray-300 hover:text-white">
+                    Cancel
+                </button>
+                <button @click="proposeAlternatives()"
+                        class="px-4 py-2 text-sm bg-primary text-white rounded hover:bg-primary/90">
+                    Send Proposals
+                </button>
             </div>
         </div>
-    </template>
+    </div>
+</template>
 </div>
 
-<div x-data="{ open: false }" 
-     @open-create-event.window="open = true"
-     @keydown.escape.window="open = false">
-    <template x-if="open">
-        <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div class="bg-gray-900 rounded-lg shadow-xl w-full max-w-md mx-4">
-                <div class="flex items-center justify-between px-4 py-3 border-b border-gray-800">
-                    <h2 class="text-lg font-semibold text-white">New Event</h2>
-                    <button @click="open = false" class="text-gray-400 hover:text-white p-1">✕</button>
-                </div>
-                
-                <form hx-post="/api/calendar/event" 
-                      hx-swap="none"
-                      hx-on::after-request="if(event.detail.successful) { open = false; window.location.reload(); }"
-                      class="p-4 space-y-4">
-                    
-                    <div>
-                        <label class="block text-sm text-gray-400 mb-1">Title</label>
-                        <input type="text" name="summary" required
-                               class="w-full bg-gray-800 text-white text-sm rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-primary">
-                    </div>
-                    
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm text-gray-400 mb-1">Start</label>
-                            <input type="datetime-local" name="start_time" required
-                                   class="w-full bg-gray-800 text-white text-sm rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-primary">
-                        </div>
-                        <div>
-                            <label class="block text-sm text-gray-400 mb-1">End</label>
-                            <input type="datetime-local" name="end_time" required
-                                   class="w-full bg-gray-800 text-white text-sm rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-primary">
-                        </div>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm text-gray-400 mb-1">Location</label>
-                        <input type="text" name="location"
-                               class="w-full bg-gray-800 text-white text-sm rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-primary">
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm text-gray-400 mb-1">Attendees (comma-separated emails)</label>
-                        <input type="text" name="attendees"
-                               class="w-full bg-gray-800 text-white text-sm rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-primary"
-                               placeholder="user@example.com, other@example.com">
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm text-gray-400 mb-1">Description</label>
-                        <textarea name="description" rows="3"
-                                  class="w-full bg-gray-800 text-white text-sm rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-primary resize-none"></textarea>
-                    </div>
-                    
-                    <div class="flex items-center space-x-2">
-                        <input type="checkbox" name="add_meet" id="add_meet" value="true"
-                               class="rounded bg-gray-800 border-gray-700 text-primary focus:ring-primary">
-                        <label for="add_meet" class="text-sm text-gray-300">Add Google Meet link</label>
-                    </div>
-                    
-                    <div class="flex justify-end space-x-2 pt-2">
-                        <button type="button" @click="open = false"
-                                class="px-4 py-2 text-sm text-gray-300 hover:text-white">
-                            Cancel
-                        </button>
-                        <button type="submit"
-                                class="px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary/90">
-                            Create Event
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </template>
-</div>
+<script>
+document.addEventListener('alpine:init', () => {
+    Alpine.store('proposeTimesEvent', null);
+});
+</script>
 {% endblock %}

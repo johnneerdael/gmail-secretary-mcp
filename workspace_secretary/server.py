@@ -7,8 +7,7 @@ from contextlib import asynccontextmanager
 from typing import AsyncIterator, Dict, Optional, cast
 
 from mcp.server.fastmcp import FastMCP
-from mcp.server.fastmcp.auth import SecretAuthSettings
-from workspace_secretary.config import ServerConfig, load_config, bearer_auth
+from workspace_secretary.config import ServerConfig, load_config
 from workspace_secretary.engine.database import DatabaseInterface, create_database
 from workspace_secretary.engine_client import EngineClient, get_engine_client
 
@@ -20,8 +19,10 @@ logger = logging.getLogger("workspace_secretary")
 
 STATIC_TOKEN = "your-very-secure-static-token"
 
+
 async def verify_static_token(token: str) -> bool:
     return token == STATIC_TOKEN
+
 
 class MCPState:
     def __init__(self):
@@ -112,20 +113,21 @@ def create_server(
         raise RuntimeError("Failed to load configuration")
 
     token_verifier = None
-    auth_settings = None
 
     if config.bearer_auth.enabled and config.bearer_auth.token:
         from mcp.server.auth.provider import AccessToken, TokenVerifier
-        
-        auth_settings = SecretAuthSettings()
-        
+
         expected_token = config.bearer_auth.token
 
         class SimpleTokenVerifier(TokenVerifier):
             async def verify_token(self, token: str) -> AccessToken | None:
                 # Remove 'Bearer ' prefix if the client sends the full header
-                clean_token = token.replace("Bearer ", "") if token.startswith("Bearer ") else token
-                
+                clean_token = (
+                    token.replace("Bearer ", "")
+                    if token.startswith("Bearer ")
+                    else token
+                )
+
                 if clean_token == expected_token:
                     return AccessToken(
                         token=clean_token,
@@ -144,12 +146,12 @@ def create_server(
         host=host,
         port=port,
         token_verifier=token_verifier,
-        auth_settings=auth_settings, # <--- CRITICAL FIX
     )
 
     _register_tools(server, config)
 
     return server
+
 
 def _register_tools(server: FastMCP, config: ServerConfig) -> None:
     @server.tool()

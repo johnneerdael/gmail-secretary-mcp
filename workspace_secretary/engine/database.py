@@ -162,6 +162,35 @@ class DatabaseInterface(ABC):
         """Get all emails in a thread based on References/In-Reply-To headers."""
         pass
 
+    @abstractmethod
+    def create_mutation(
+        self,
+        email_uid: int,
+        email_folder: str,
+        action: str,
+        params: Optional[dict] = None,
+        pre_state: Optional[dict] = None,
+    ) -> int:
+        """Record a pending mutation. Returns the mutation ID."""
+        pass
+
+    @abstractmethod
+    def update_mutation_status(
+        self, mutation_id: int, status: str, error: Optional[str] = None
+    ) -> None:
+        """Update mutation status (PENDING -> COMPLETED/FAILED)."""
+        pass
+
+    @abstractmethod
+    def get_pending_mutations(self, email_uid: int, email_folder: str) -> list[dict]:
+        """Get pending mutations for an email (to avoid sync clobbering)."""
+        pass
+
+    @abstractmethod
+    def get_mutation(self, mutation_id: int) -> Optional[dict]:
+        """Get a mutation by ID (for restore/undo)."""
+        pass
+
     # Embedding operations (optional - only for PostgreSQL with pgvector)
     def supports_embeddings(self) -> bool:
         """Check if this backend supports vector embeddings."""
@@ -292,6 +321,51 @@ class SqliteDatabase(DatabaseInterface):
                     uidnext INTEGER,
                     highestmodseq INTEGER,
                     last_sync TEXT
+                )
+                """
+            )
+
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS mutation_journal (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    email_uid INTEGER NOT NULL,
+                    email_folder TEXT NOT NULL,
+                    action TEXT NOT NULL,
+                    params TEXT,
+                    status TEXT DEFAULT 'PENDING',
+                    pre_state TEXT,
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    error TEXT,
+                    FOREIGN KEY (email_uid, email_folder) REFERENCES emails(uid, folder) ON DELETE CASCADE
+                )
+                """
+            )
+
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS system_health (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    component TEXT NOT NULL,
+                    metric TEXT NOT NULL,
+                    value TEXT,
+                    recorded_at TEXT DEFAULT CURRENT_TIMESTAMP
+                )
+                """
+            )
+
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS sync_errors (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    folder TEXT,
+                    email_uid INTEGER,
+                    error_type TEXT NOT NULL,
+                    error_message TEXT,
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    resolved_at TEXT,
+                    resolution TEXT
                 )
                 """
             )
@@ -693,6 +767,67 @@ class SqliteDatabase(DatabaseInterface):
             cursor = conn.execute(query, list(related_ids) + list(related_ids))
             return [dict(row) for row in cursor.fetchall()]
 
+    def create_mutation(
+        self,
+        email_uid: int,
+        email_folder: str,
+        action: str,
+        params: Optional[dict] = None,
+        pre_state: Optional[dict] = None,
+    ) -> int:
+        import json
+
+        with self._get_email_connection() as conn:
+            cursor = conn.execute(
+                """
+                INSERT INTO mutation_journal (email_uid, email_folder, action, params, pre_state)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (
+                    email_uid,
+                    email_folder,
+                    action,
+                    json.dumps(params) if params else None,
+                    json.dumps(pre_state) if pre_state else None,
+                ),
+            )
+            conn.commit()
+            return cursor.lastrowid
+
+    def update_mutation_status(
+        self, mutation_id: int, status: str, error: Optional[str] = None
+    ) -> None:
+        with self._get_email_connection() as conn:
+            conn.execute(
+                """
+                UPDATE mutation_journal 
+                SET status = ?, error = ?, updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+                """,
+                (status, error, mutation_id),
+            )
+            conn.commit()
+
+    def get_pending_mutations(self, email_uid: int, email_folder: str) -> list[dict]:
+        with self._get_email_connection() as conn:
+            cursor = conn.execute(
+                """
+                SELECT * FROM mutation_journal 
+                WHERE email_uid = ? AND email_folder = ? AND status = 'PENDING'
+                ORDER BY created_at
+                """,
+                (email_uid, email_folder),
+            )
+            return [dict(row) for row in cursor.fetchall()]
+
+    def get_mutation(self, mutation_id: int) -> Optional[dict]:
+        with self._get_email_connection() as conn:
+            cursor = conn.execute(
+                "SELECT * FROM mutation_journal WHERE id = ?", (mutation_id,)
+            )
+            row = cursor.fetchone()
+            return dict(row) if row else None
+
 
 class PostgresDatabase(DatabaseInterface):
     """PostgreSQL database backend with pgvector for semantic search."""
@@ -790,6 +925,54 @@ class PostgresDatabase(DatabaseInterface):
                         uidnext INTEGER,
                         highestmodseq BIGINT,
                         last_sync TIMESTAMPTZ
+                    )
+                    """
+                )
+
+                # Create mutation_journal table
+                cur.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS mutation_journal (
+                        id SERIAL PRIMARY KEY,
+                        email_uid INTEGER NOT NULL,
+                        email_folder TEXT NOT NULL,
+                        action TEXT NOT NULL,
+                        params JSONB,
+                        status TEXT DEFAULT 'PENDING',
+                        pre_state JSONB,
+                        created_at TIMESTAMPTZ DEFAULT NOW(),
+                        updated_at TIMESTAMPTZ DEFAULT NOW(),
+                        error TEXT,
+                        FOREIGN KEY (email_uid, email_folder) REFERENCES emails(uid, folder) ON DELETE CASCADE
+                    )
+                    """
+                )
+
+                # Create system_health table for tracking metrics
+                cur.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS system_health (
+                        id SERIAL PRIMARY KEY,
+                        component TEXT NOT NULL,
+                        metric TEXT NOT NULL,
+                        value TEXT,
+                        recorded_at TIMESTAMPTZ DEFAULT NOW()
+                    )
+                    """
+                )
+
+                # Create sync_errors table for tracking sync failures
+                cur.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS sync_errors (
+                        id SERIAL PRIMARY KEY,
+                        folder TEXT,
+                        email_uid INTEGER,
+                        error_type TEXT NOT NULL,
+                        error_message TEXT,
+                        created_at TIMESTAMPTZ DEFAULT NOW(),
+                        resolved_at TIMESTAMPTZ,
+                        resolution TEXT
                     )
                     """
                 )
@@ -1211,6 +1394,77 @@ class PostgresDatabase(DatabaseInterface):
                 )
                 columns = [desc[0] for desc in cur.description]
                 return [dict(zip(columns, row)) for row in cur.fetchall()]
+
+    def create_mutation(
+        self,
+        email_uid: int,
+        email_folder: str,
+        action: str,
+        params: Optional[dict] = None,
+        pre_state: Optional[dict] = None,
+    ) -> int:
+        import json
+
+        with self.connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    INSERT INTO mutation_journal (email_uid, email_folder, action, params, pre_state)
+                    VALUES (%s, %s, %s, %s, %s)
+                    RETURNING id
+                    """,
+                    (
+                        email_uid,
+                        email_folder,
+                        action,
+                        json.dumps(params) if params else None,
+                        json.dumps(pre_state) if pre_state else None,
+                    ),
+                )
+                mutation_id = cur.fetchone()[0]
+                conn.commit()
+                return mutation_id
+
+    def update_mutation_status(
+        self, mutation_id: int, status: str, error: Optional[str] = None
+    ) -> None:
+        with self.connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    UPDATE mutation_journal 
+                    SET status = %s, error = %s, updated_at = NOW()
+                    WHERE id = %s
+                    """,
+                    (status, error, mutation_id),
+                )
+                conn.commit()
+
+    def get_pending_mutations(self, email_uid: int, email_folder: str) -> list[dict]:
+        with self.connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT * FROM mutation_journal 
+                    WHERE email_uid = %s AND email_folder = %s AND status = 'PENDING'
+                    ORDER BY created_at
+                    """,
+                    (email_uid, email_folder),
+                )
+                columns = [desc[0] for desc in cur.description]
+                return [dict(zip(columns, row)) for row in cur.fetchall()]
+
+    def get_mutation(self, mutation_id: int) -> Optional[dict]:
+        with self.connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT * FROM mutation_journal WHERE id = %s", (mutation_id,)
+                )
+                row = cur.fetchone()
+                if row:
+                    columns = [desc[0] for desc in cur.description]
+                    return dict(zip(columns, row))
+                return None
 
     # Embedding operations (pgvector specific)
     def supports_embeddings(self) -> bool:

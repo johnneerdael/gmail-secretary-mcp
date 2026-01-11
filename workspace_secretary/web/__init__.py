@@ -9,45 +9,77 @@ Provides a human interface to the email system with:
 - Authentication (password, OIDC, SAML2)
 """
 
+import logging
+import asyncio
+from typing import Optional
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from pathlib import Path
-import logging
-from typing import Optional
 
 from workspace_secretary.config import WebConfig
 
 logger = logging.getLogger(__name__)
 
-__all__ = [
-    "web_app",
-    "templates",
-    "init_web_app",
-    "get_web_config",
-    "get_template_context",
-]
+_web_config: Optional[WebConfig] = None
+
+HEALTH_CHECK_INTERVAL_SECONDS = 300
+HEALTH_CHECK_INITIAL_DELAY_SECONDS = 60
+
+
+async def _health_check_loop():
+    from workspace_secretary.web.routes.admin import get_mutation_stats, get_sync_stats
+    from workspace_secretary.web.alerting import check_and_alert
+
+    await asyncio.sleep(HEALTH_CHECK_INITIAL_DELAY_SECONDS)
+    while True:
+        try:
+            mutation_stats = get_mutation_stats()
+            sync_stats = get_sync_stats()
+
+            overall_health = "healthy"
+            if (
+                mutation_stats["health"] == "critical"
+                or sync_stats["health"] == "critical"
+            ):
+                overall_health = "critical"
+
+            if overall_health == "critical":
+                alerts_sent = check_and_alert(mutation_stats, sync_stats)
+                if alerts_sent:
+                    logger.warning(f"Critical alerts sent: {alerts_sent}")
+        except Exception as e:
+            logger.error(f"Health check error: {e}")
+
+        await asyncio.sleep(HEALTH_CHECK_INTERVAL_SECONDS)
+
+
+@asynccontextmanager
+async def lifespan(app):
+    health_check_task = asyncio.create_task(_health_check_loop())
+    logger.info("Background health check started")
+    yield
+    health_check_task.cancel()
+    try:
+        await health_check_task
+    except asyncio.CancelledError:
+        pass
+    logger.info("Background health check stopped")
+
 
 web_app = FastAPI(
     title="Secretary Web",
     description="AI-powered email client",
     docs_url="/api/docs",
     redoc_url=None,
+    lifespan=lifespan,
 )
-
-TEMPLATES_DIR = Path(__file__).parent / "templates"
-STATIC_DIR = Path(__file__).parent / "static"
-
-templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
-
-web_app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
-
-_web_config: Optional[WebConfig] = None
 
 
 def init_web_app(config: Optional[WebConfig] = None):
-    """Initialize web app with configuration."""
     global _web_config
     _web_config = config
 
@@ -60,12 +92,10 @@ def init_web_app(config: Optional[WebConfig] = None):
 
 
 def get_web_config() -> Optional[WebConfig]:
-    """Get current web configuration."""
     return _web_config
 
 
 def get_template_context(request: Request, **kwargs) -> dict:
-    """Build template context with theme and session info."""
     from workspace_secretary.web.auth import get_session
 
     session = get_session(request)
@@ -85,17 +115,14 @@ def get_template_context(request: Request, **kwargs) -> dict:
 
 @web_app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
-    """Redirect to inbox (dashboard is served by dashboard router)."""
     return RedirectResponse(url="/inbox")
 
 
 @web_app.get("/favicon.ico")
 async def favicon():
-    """Return empty favicon to prevent 404."""
     return Response(content=b"", media_type="image/x-icon")
 
 
 @web_app.get("/health")
 async def health():
-    """Health check endpoint."""
     return {"status": "ok", "service": "secretary-web"}

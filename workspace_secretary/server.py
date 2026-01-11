@@ -107,12 +107,32 @@ def create_server(
     if not config:
         raise RuntimeError("Failed to load configuration")
 
+    token_verifier = None
+    if config.bearer_auth.enabled and config.bearer_auth.token:
+        from mcp.server.auth.provider import AccessToken, TokenVerifier
+
+        expected_token = config.bearer_auth.token
+
+        class SimpleTokenVerifier(TokenVerifier):
+            async def verify_token(self, token: str) -> AccessToken | None:
+                if token == expected_token:
+                    return AccessToken(
+                        token=token,
+                        client_id="secretary-client",
+                        scopes=[],
+                    )
+                return None
+
+        token_verifier = SimpleTokenVerifier()
+        logger.info("Bearer authentication enabled")
+
     server = FastMCP(
         "Secretary",
         instructions="Gmail Secretary - Email and Calendar MCP",
         lifespan=server_lifespan,
         host=host,
         port=port,
+        token_verifier=token_verifier,
     )
 
     _register_tools(server, config)
@@ -497,6 +517,7 @@ def main() -> None:
             app = server.sse_app()
         else:
             app = server.streamable_http_app()
+
         uvicorn.run(app, host=args.host, port=args.port)
 
 

@@ -83,6 +83,49 @@ def get_email(uid: int, folder: str) -> Optional[dict]:
             return cur.fetchone()
 
 
+def get_neighbor_uids(
+    folder: str, uid: int, unread_only: bool = False
+) -> dict[str, Optional[int]]:
+    """Get the UIDs of the next and previous emails in the current list context."""
+    with get_conn() as conn:
+        with conn.cursor(row_factory=dict_row) as cur:
+            # Get current email's date
+            cur.execute(
+                "SELECT date FROM emails WHERE uid = %s AND folder = %s", (uid, folder)
+            )
+            current = cur.fetchone()
+            if not current:
+                return {"next": None, "prev": None}
+
+            current_date = current["date"]
+            unread_filter = "AND is_unread = true" if unread_only else ""
+
+            # Next (Newer) - ORDER BY date ASC
+            sql_next = f"""
+                SELECT uid FROM emails 
+                WHERE folder = %s {unread_filter}
+                AND (date > %s OR (date = %s AND uid > %s))
+                ORDER BY date ASC, uid ASC LIMIT 1
+            """
+            cur.execute(sql_next, (folder, current_date, current_date, uid))
+            next_row = cur.fetchone()
+
+            # Previous (Older) - ORDER BY date DESC
+            sql_prev = f"""
+                SELECT uid FROM emails 
+                WHERE folder = %s {unread_filter}
+                AND (date < %s OR (date = %s AND uid < %s))
+                ORDER BY date DESC, uid DESC LIMIT 1
+            """
+            cur.execute(sql_prev, (folder, current_date, current_date, uid))
+            prev_row = cur.fetchone()
+
+            return {
+                "next": next_row["uid"] if next_row else None,
+                "prev": prev_row["uid"] if prev_row else None,
+            }
+
+
 def get_thread(uid: int, folder: str) -> list[dict]:
     with get_conn() as conn:
         with conn.cursor(row_factory=dict_row) as cur:

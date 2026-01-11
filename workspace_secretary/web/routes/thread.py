@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, HTTPException, Depends
+from fastapi import APIRouter, Request, HTTPException, Depends, Query
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
@@ -91,9 +91,45 @@ def detect_calendar_invite(email: dict) -> dict | None:
     }
 
 
+def split_quoted_text(content: str) -> tuple[str, str]:
+    if not content:
+        return "", ""
+
+    patterns = [
+        r"(?i)(<br\s*/?>|<div>| )*On\s+.*\s+wrote:.*",
+        r"(?i)(<br\s*/?>|<div>| )*-+\s*Original Message\s*-+.*",
+        r"(?i)(<br\s*/?>|<div>| )*From:.*Sent:.*To:.*",
+    ]
+
+    best_split_point = len(content)
+
+    for pattern in patterns:
+        match = re.search(pattern, content, flags=re.DOTALL)
+        if match:
+            best_split_point = min(best_split_point, match.start())
+
+    if "&gt;" in content:
+        lines = content.split("<br>")
+        for i, line in enumerate(lines):
+            if line.strip().startswith("&gt;"):
+                split_point = content.find("<br>" + line) if i > 0 else 0
+                if split_point != -1:
+                    best_split_point = min(best_split_point, split_point)
+                    break
+
+    if best_split_point < len(content):
+        return content[:best_split_point].strip(), content[best_split_point:].strip()
+
+    return content, ""
+
+
 @router.get("/thread/{folder}/{uid}", response_class=HTMLResponse)
 async def thread_view(
-    request: Request, folder: str, uid: int, session: Session = Depends(require_auth)
+    request: Request,
+    folder: str,
+    uid: int,
+    unread_only: bool = Query(False),
+    session: Session = Depends(require_auth),
 ):
     email = db.get_email(uid, folder)
     if not email:
@@ -102,6 +138,9 @@ async def thread_view(
     thread_emails = db.get_thread(uid, folder)
     if not thread_emails:
         thread_emails = [email]
+
+    # Get neighbors for navigation
+    neighbors = db.get_neighbor_uids(folder, uid, unread_only)
 
     messages = []
     calendar_invite = None
@@ -114,6 +153,8 @@ async def thread_view(
         if not calendar_invite:
             calendar_invite = detect_calendar_invite(e)
 
+        main_content, quoted_content = split_quoted_text(content)
+
         messages.append(
             {
                 "uid": e["uid"],
@@ -124,7 +165,8 @@ async def thread_view(
                 "cc_addr": e.get("cc_addr", ""),
                 "subject": e.get("subject", "(no subject)"),
                 "date": format_datetime(e.get("date")),
-                "content": content,
+                "content": main_content,
+                "quoted_content": quoted_content,
                 "is_unread": e.get("is_unread", False),
                 "has_attachments": e.get("has_attachments", False),
                 "attachment_filenames": e.get("attachment_filenames", []),
@@ -139,6 +181,8 @@ async def thread_view(
             "messages": messages,
             "folder": folder,
             "uid": uid,
+            "neighbors": neighbors,
+            "unread_only": unread_only,
             "calendar_invite": calendar_invite,
         },
     )

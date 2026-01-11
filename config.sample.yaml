@@ -161,3 +161,15 @@ database:
 # =============================================================================
 calendar:
   enabled: false  # Set to true to enable calendar tools
+
+# =============================================================================
+# OPTIONAL: Admin Alerting
+# =============================================================================
+# Send email alerts when critical system issues are detected.
+# Alerts are sent for: stuck mutations (>1h), sync failures (>30min stale),
+# and unresolved sync errors.
+#
+# alerting:
+#   enabled: true
+#   recipient: admin@example.com
+#   cooldown_minutes: 60  # Minimum time between alerts (default: 60)
